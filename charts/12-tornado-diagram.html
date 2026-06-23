@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tornado diagram — PM Chart Library</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/nav.js"></script>
+  <style>
+    /* Chart-specific overrides — no hardcoded colours, use token vars */
+    .widget-wrap {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-lg);
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+  <div class="chart-wrap">
+
+    <h1 class="chart-title">Tornado diagram</h1>
+    <p class="chart-subtitle">Risk impact ranked for budget conversations.</p>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTERACTIVE WIDGET
+         Claude Code: replace this placeholder with the full
+         verified widget HTML + CSS + JS from the session brief.
+         All colours must use --pm-* CSS variables.
+         Chart.js charts must read --pm-chart-* vars at runtime.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="widget-wrap">
+      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
+        <div style="text-align:center">
+          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
+          Widget placeholder — Chart 12: Tornado diagram<br>
+          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="doc-section">
+      <h2 class="doc-title">What you are looking at</h2>
+      <div class="doc-body"><p>Each bar is a risk sorted by total impact range — widest at the top, narrowest at the bottom. Red bars extend left from the base estimate showing downside cost impact. Green bars extend right showing upside savings potential. The purple centre line is your base estimate. The simulator tab lets you drag each risk's downside and watch contingency requirement and total exposure recalculate live. The risk register shows the full ranked list with category badges.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">What most PMs miss</h2>
+      <div class="doc-body"><p>The tornado diagram is built once for the business case and never revisited. The most valuable use is mid-project when you know more — early estimates are wide, later estimates are precise. Re-run the tornado at 25%, 50% and 75% completion to check whether your contingency reserve is still adequate or whether you need to escalate to the sponsor.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">The expert tip</h2>
+      <div class="expert-tip">In a budget conversation, do not lead with the total exposure number — it triggers a defensive reaction. Instead point to the top three bars and say: these three risks account for seventy percent of our contingency requirement. If we mitigate just these, our reserve drops from X to Y. Run that scenario live in the room using the simulator. A sponsor who sees the number change as you explain the mitigation is far more likely to approve targeted contingency than one who receives a static spreadsheet.</div>
+    </div>
+
+  </div>
+</body>
+</html>

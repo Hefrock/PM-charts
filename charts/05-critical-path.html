@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Critical path — PM Chart Library</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/nav.js"></script>
+  <style>
+    /* Chart-specific overrides — no hardcoded colours, use token vars */
+    .widget-wrap {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-lg);
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+  <div class="chart-wrap">
+
+    <h1 class="chart-title">Critical path</h1>
+    <p class="chart-subtitle">Find what is truly unmovable in your schedule.</p>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTERACTIVE WIDGET
+         Claude Code: replace this placeholder with the full
+         verified widget HTML + CSS + JS from the session brief.
+         All colours must use --pm-* CSS variables.
+         Chart.js charts must read --pm-chart-* vars at runtime.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="widget-wrap">
+      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
+        <div style="text-align:center">
+          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
+          Widget placeholder — Chart 05: Critical path<br>
+          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="doc-section">
+      <h2 class="doc-title">What you are looking at</h2>
+      <div class="doc-body"><p>Each node shows four numbers: duration, Early Start, Early Finish and float. Nodes with float equal to zero form the critical path — highlighted in purple. The forward pass calculates the earliest each task can start and finish. The backward pass calculates the latest. Float is the gap between them. Drag the delay sliders to slip any task and watch the end date and critical path recalculate live.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">What most PMs miss</h2>
+      <div class="doc-body"><p>The critical path changes during the project. A task that had float in week one may have none by week six because other delays consumed the buffer. PMs who calculate the critical path once at kickoff and never revisit it are managing a map that no longer matches the terrain. Recalculate it weekly during execution.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">The expert tip</h2>
+      <div class="expert-tip">Try slipping a non-critical task in the simulator until it absorbs all its float. Watch it join the critical path. That is the key insight: float is not free time, it is a budget. When a sponsor asks you to accelerate, show them this chart and point to exactly which tasks need crashing — that turns schedule negotiation from opinion into data.</div>
+    </div>
+
+  </div>
+</body>
+</html>

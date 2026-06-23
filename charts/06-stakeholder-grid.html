@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stakeholder grid — PM Chart Library</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/nav.js"></script>
+  <style>
+    /* Chart-specific overrides — no hardcoded colours, use token vars */
+    .widget-wrap {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-lg);
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+  <div class="chart-wrap">
+
+    <h1 class="chart-title">Stakeholder grid</h1>
+    <p class="chart-subtitle">Power and interest mapped to engagement strategies.</p>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTERACTIVE WIDGET
+         Claude Code: replace this placeholder with the full
+         verified widget HTML + CSS + JS from the session brief.
+         All colours must use --pm-* CSS variables.
+         Chart.js charts must read --pm-chart-* vars at runtime.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="widget-wrap">
+      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
+        <div style="text-align:center">
+          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
+          Widget placeholder — Chart 06: Stakeholder grid<br>
+          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="doc-section">
+      <h2 class="doc-title">What you are looking at</h2>
+      <div class="doc-body"><p>Power runs vertically — how much authority this person has to fund, block or redirect the project. Interest runs horizontally — how closely they follow progress. Four quadrants each have a non-negotiable engagement strategy: Manage closely (weekly), Keep satisfied (monthly), Keep informed (fortnightly), Monitor (quarterly). Drag any dot to reposition. Sentiment colours show champion, supporter, neutral, skeptic and blocker.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">What most PMs miss</h2>
+      <div class="doc-body"><p>Mapping stakeholders once at kickoff and filing it away. Stakeholder positions drift — a reorganisation, a missed milestone or a change of sponsor can shift someone from Monitor to Manage closely overnight without any visible signal. Re-plot the grid before every major project event and ask for each person: has anything changed in their world?</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">The expert tip</h2>
+      <div class="expert-tip">Before every steering committee meeting, re-plot the grid and ask one question per stakeholder: has anything changed? A new boss, a budget pressure, a bad experience with a similar project. Five minutes of reflection prevents the most common and most avoidable project crisis — the stakeholder surprise where someone who appeared aligned suddenly blocks a key decision in front of everyone.</div>
+    </div>
+
+  </div>
+</body>
+</html>

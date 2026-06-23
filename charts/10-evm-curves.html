@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EVM curves — PM Chart Library</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/nav.js"></script>
+  <style>
+    /* Chart-specific overrides — no hardcoded colours, use token vars */
+    .widget-wrap {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-lg);
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+  <div class="chart-wrap">
+
+    <h1 class="chart-title">EVM curves</h1>
+    <p class="chart-subtitle">Schedule and cost performance in one financial view.</p>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTERACTIVE WIDGET
+         Claude Code: replace this placeholder with the full
+         verified widget HTML + CSS + JS from the session brief.
+         All colours must use --pm-* CSS variables.
+         Chart.js charts must read --pm-chart-* vars at runtime.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="widget-wrap">
+      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
+        <div style="text-align:center">
+          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
+          Widget placeholder — Chart 10: EVM curves<br>
+          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="doc-section">
+      <h2 class="doc-title">What you are looking at</h2>
+      <div class="doc-body"><p>Three lines carry the complete financial story. PV is planned value — the baseline budget curve. EV is earned value — the budgeted cost of work actually completed. AC is actual cost. The amber dashed line is EAC — where you will finish if current efficiency continues. SPI below 0.95 means behind schedule. CPI below 0.95 means over budget. The Simulator tab lets you drag EV and AC independently and watch all twelve EVM metrics recalculate live. The Plain English tab translates each acronym into plain language.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">What most PMs miss</h2>
+      <div class="doc-body"><p>EV is the most misunderstood number in EVM. It is not what you spent. It is the budgeted value of work that meets the agreed definition of done. A task budgeted at fifty thousand that is ninety percent complete has earned zero until it crosses the completion threshold. PMs who use percentage estimates inflate EV and make the project look healthier than it is.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">The expert tip</h2>
+      <div class="expert-tip">Translate CPI into dollars before presenting it. In a steering committee, 'our CPI is 0.84' lands as a technical abstraction. 'For every dollar of work we complete we are spending one dollar nineteen' lands as a business problem that demands a response. Use the simulator to match your actual project numbers and use that sentence verbatim in your next sponsor conversation.</div>
+    </div>
+
+  </div>
+</body>
+</html>

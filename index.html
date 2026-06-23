@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="15 interactive charts every project manager needs — Gantt, S-Curve, Risk Matrix, RACI, EVM and more. All charts are fully interactive with simulation features.">
+  <title>PM Chart Library — 15 Interactive Charts for Project Managers</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="assets/nav.js"></script>
+  <style>
+    .hero { padding: 48px 20px 32px; text-align: center; max-width: 640px; margin: 0 auto; }
+    .hero h1 { font-size: 32px; font-weight: 500; color: var(--pm-tx-primary); margin: 0 0 12px; }
+    .hero p { font-size: 16px; color: var(--pm-tx-secondary); margin: 0 0 32px; line-height: 1.6; }
+    .hero-stats { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+    .hero-stat { text-align: center; }
+    .hero-stat-val { font-size: 28px; font-weight: 500; color: var(--pm-coral-400); display: block; }
+    .hero-stat-lbl { font-size: 12px; color: var(--pm-tx-secondary); }
+    .grid-wrap { max-width: 960px; margin: 0 auto; padding: 0 20px 60px; }
+    .cat-header { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--pm-tx-tertiary); margin: 28px 0 10px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+    .chart-card {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: 12px;
+      padding: 16px;
+      text-decoration: none;
+      display: block;
+      transition: border-color .15s, transform .1s;
+    }
+    .chart-card:hover { border-color: var(--pm-coral-400); transform: translateY(-1px); }
+    .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .card-num { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+    .card-title { font-size: 14px; font-weight: 500; color: var(--pm-tx-primary); }
+    .card-desc { font-size: 12px; color: var(--pm-tx-secondary); line-height: 1.55; margin: 0 0 10px; }
+    .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .card-tag { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+    .tag-sim { background: var(--pm-info-bg); color: var(--pm-info-tx); }
+    .tag-tabs { background: var(--pm-meas-bg); color: var(--pm-meas-tx); }
+    footer { text-align: center; padding: 24px 20px; font-size: 12px; color: var(--pm-tx-tertiary); border-top: 0.5px solid var(--pm-border); }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+
+  <div class="hero">
+    <h1>PM Chart Library</h1>
+    <p>15 interactive charts every project manager needs — with simulation features, expert tips and real-world examples.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-val">15</span><span class="hero-stat-lbl">interactive charts</span></div>
+      <div class="hero-stat"><span class="hero-stat-val">10</span><span class="hero-stat-lbl">with full simulation</span></div>
+      <div class="hero-stat"><span class="hero-stat-val">0</span><span class="hero-stat-lbl">dependencies</span></div>
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+
+    <div class="cat-header">Schedule</div>
+    <div class="card-grid">
+      <a class="chart-card" href="charts/01-gantt.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-people-bg);color:var(--pm-people-tx)">01</span><span class="card-title">Gantt chart</span></div>
+        <p class="card-desc">Timeline, dependencies and critical path in one view. The backbone of every project schedule.</p>
+        <div class="card-tags"><span class="card-tag tag-tabs">Filters</span></div>
+      </a>
+      <a class="chart-card" href="charts/02-s-curve.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-people-bg);color:var(--pm-people-tx)">02</span><span class="card-title">S-Curve</span></div>
+        <p class="card-desc">Cumulative cost and schedule health at a glance. Three lines tell the complete project story.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span></div>
+      </a>
+      <a class="chart-card" href="charts/05-critical-path.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-people-bg);color:var(--pm-people-tx)">05</span><span class="card-title">Critical path</span></div>
+        <p class="card-desc">Find what's truly unmovable in your schedule. Float calculation with live delay simulation.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span></div>
+      </a>
+      <a class="chart-card" href="charts/07-burn-down.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-people-bg);color:var(--pm-people-tx)">07</span><span class="card-title">Burn-down chart</span></div>
+        <p class="card-desc">Sprint progress and bottleneck signals day by day. Four scenario patterns every Agile PM must recognise.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Scenarios</span></div>
+      </a>
+      <a class="chart-card" href="charts/13-cumulative-flow.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-people-bg);color:var(--pm-people-tx)">13</span><span class="card-title">Cumulative flow diagram</span></div>
+        <p class="card-desc">Where work is piling up in your workflow. Bottleneck and starvation patterns with live throughput simulation.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span></div>
+      </a>
+    </div>
+
+    <div class="cat-header">Risk</div>
+    <div class="card-grid">
+      <a class="chart-card" href="charts/04-risk-matrix.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-bad-bg);color:var(--pm-bad-tx)">04</span><span class="card-title">Risk matrix</span></div>
+        <p class="card-desc">Probability vs impact with live response strategies. Add and reposition risks with a live register.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Live register</span></div>
+      </a>
+      <a class="chart-card" href="charts/12-tornado-diagram.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-bad-bg);color:var(--pm-bad-tx)">12</span><span class="card-title">Tornado diagram</span></div>
+        <p class="card-desc">Risk impact ranked for budget conversations. Drag impact sliders to stress-test your contingency live.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span></div>
+      </a>
+      <a class="chart-card" href="charts/14-control-chart.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-bad-bg);color:var(--pm-bad-tx)">14</span><span class="card-title">Control chart</span></div>
+        <p class="card-desc">Separate real problems from normal variation. Western Electric rules with live mean and sigma simulation.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span></div>
+      </a>
+    </div>
+
+    <div class="cat-header">People</div>
+    <div class="card-grid">
+      <a class="chart-card" href="charts/06-stakeholder-grid.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-env-bg);color:var(--pm-env-tx)">06</span><span class="card-title">Stakeholder grid</span></div>
+        <p class="card-desc">Power and interest mapped to engagement strategies. Drag stakeholders to reposition across four quadrants.</p>
+        <div class="card-tags"><span class="card-tag tag-tabs">4 tabs</span></div>
+      </a>
+      <a class="chart-card" href="charts/08-raci-matrix.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-env-bg);color:var(--pm-env-tx)">08</span><span class="card-title">RACI matrix</span></div>
+        <p class="card-desc">Accountability without confusion. Live health checker catches missing or duplicate ownership.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Health check</span><span class="card-tag tag-tabs">6 tabs</span></div>
+      </a>
+      <a class="chart-card" href="charts/09-resource-histogram.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-env-bg);color:var(--pm-env-tx)">09</span><span class="card-title">Resource histogram</span></div>
+        <p class="card-desc">Spot over-allocation before it causes burnout. Per-person weekly sliders recalculate alerts live.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">4 tabs</span></div>
+      </a>
+    </div>
+
+    <div class="cat-header">Finance</div>
+    <div class="card-grid">
+      <a class="chart-card" href="charts/10-evm-curves.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-mat-bg);color:var(--pm-mat-tx)">10</span><span class="card-title">EVM curves</span></div>
+        <p class="card-desc">Schedule and cost performance in one financial view. All 12 EVM metrics calculated live from drag sliders.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">4 tabs</span></div>
+      </a>
+      <a class="chart-card" href="charts/11-pareto-chart.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-mat-bg);color:var(--pm-mat-tx)">11</span><span class="card-title">Pareto chart</span></div>
+        <p class="card-desc">The 20% of causes driving 80% of your problems. Adjust cause counts and watch the vital few recalculate.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">5 tabs</span></div>
+      </a>
+    </div>
+
+    <div class="cat-header">Reference</div>
+    <div class="card-grid">
+      <a class="chart-card" href="charts/03-priority-roadmap.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-process-bg);color:var(--pm-process-tx)">03</span><span class="card-title">Priority roadmap</span></div>
+        <p class="card-desc">All 15 charts ranked by frequency and impact — your master guide to which chart to use when.</p>
+        <div class="card-tags"><span class="card-tag tag-tabs">Filters</span></div>
+      </a>
+      <a class="chart-card" href="charts/15-fishbone.html">
+        <div class="card-top"><span class="card-num" style="background:var(--pm-process-bg);color:var(--pm-process-tx)">15</span><span class="card-title">Fishbone diagram</span></div>
+        <p class="card-desc">Structured root cause analysis for retrospectives. Compact and expanded views with 5 Whys drill-down.</p>
+        <div class="card-tags"><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">5 tabs</span></div>
+      </a>
+    </div>
+
+  </div>
+
+  <footer>
+    PM Chart Library &nbsp;·&nbsp; 15 interactive charts for project managers &nbsp;·&nbsp; Built with Chart.js
+  </footer>
+</body>
+</html>

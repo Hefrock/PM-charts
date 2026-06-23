@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RACI matrix — PM Chart Library</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/nav.js"></script>
+  <style>
+    /* Chart-specific overrides — no hardcoded colours, use token vars */
+    .widget-wrap {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-lg);
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+  <div class="chart-wrap">
+
+    <h1 class="chart-title">RACI matrix</h1>
+    <p class="chart-subtitle">Accountability without confusion across all tasks.</p>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTERACTIVE WIDGET
+         Claude Code: replace this placeholder with the full
+         verified widget HTML + CSS + JS from the session brief.
+         All colours must use --pm-* CSS variables.
+         Chart.js charts must read --pm-chart-* vars at runtime.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="widget-wrap">
+      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
+        <div style="text-align:center">
+          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
+          Widget placeholder — Chart 08: RACI matrix<br>
+          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="doc-section">
+      <h2 class="doc-title">What you are looking at</h2>
+      <div class="doc-body"><p>Rows are tasks grouped by phase. Columns are roles or people. Click any cell to cycle through R, A, C, I and blank. R is Responsible — does the work. A is Accountable — exactly one per row. C is Consulted — two-way input before decisions. I is Informed — one-way update after decisions. Rows highlighted in red have accountability problems. The Health check tab runs a live audit. The Templates tab loads four industry pre-sets.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">What most PMs miss</h2>
+      <div class="doc-body"><p>Two As on a single row. It feels collaborative but destroys accountability — when two people are both accountable, each assumes the other is handling it. One A per row is a hard rule with no exceptions. The second miss is C inflation — marking everyone as Consulted to avoid political friction. Every additional C is a communication loop and a potential delay.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">The expert tip</h2>
+      <div class="expert-tip">Run the health check before your kickoff meeting, not after. The errors it surfaces — missing As, duplicate As, unassigned roles — are conversations you need to have while the project is still in setup mode. After kickoff those conversations become political. The health check gives you an objective basis for the discussion: not 'I think we need clarity on ownership' but 'we have six rows with no accountable owner — let us assign them now, in this room.'</div>
+    </div>
+
+  </div>
+</body>
+</html>

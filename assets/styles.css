@@ -1,0 +1,219 @@
+/* ============================================================
+   PM Chart Library — Shared Design Tokens
+   assets/styles.css
+   Light and dark mode compatible — all charts inherit from this
+   ============================================================ */
+
+:root {
+  --pm-coral-50:#FAECE7;  --pm-coral-200:#F0997B;  --pm-coral-400:#D85A30;
+  --pm-coral-600:#993C1D; --pm-coral-800:#712B13;  --pm-coral-900:#4A1B0C;
+
+  --pm-purple-50:#EEEDFE; --pm-purple-200:#AFA9EC; --pm-purple-400:#7F77DD;
+  --pm-purple-600:#534AB7;--pm-purple-800:#3C3489; --pm-purple-900:#26215C;
+
+  --pm-blue-50:#E6F1FB;   --pm-blue-200:#85B7EB;   --pm-blue-400:#378ADD;
+  --pm-blue-600:#185FA5;  --pm-blue-800:#0C447C;   --pm-blue-900:#042C53;
+
+  --pm-teal-50:#E1F5EE;   --pm-teal-200:#5DCAA5;   --pm-teal-400:#1D9E75;
+  --pm-teal-600:#0F6E56;  --pm-teal-800:#085041;   --pm-teal-900:#04342C;
+
+  --pm-amber-50:#FAEEDA;  --pm-amber-200:#EF9F27;  --pm-amber-400:#BA7517;
+  --pm-amber-600:#854F0B; --pm-amber-800:#633806;  --pm-amber-900:#412402;
+
+  --pm-red-50:#FCEBEB;    --pm-red-200:#F09595;    --pm-red-400:#E24B4A;
+  --pm-red-600:#A32D2D;   --pm-red-800:#791F1F;    --pm-red-900:#501313;
+
+  --pm-green-50:#EAF3DE;  --pm-green-200:#97C459;  --pm-green-400:#639922;
+  --pm-green-600:#3B6D11; --pm-green-800:#27500A;  --pm-green-900:#173404;
+
+  --pm-gray-50:#F1EFE8;   --pm-gray-200:#B4B2A9;   --pm-gray-400:#888780;
+  --pm-gray-600:#5F5E5A;  --pm-gray-800:#444441;   --pm-gray-900:#2C2C2A;
+
+  /* Category tokens — light mode */
+  --pm-people-bg:var(--pm-coral-50);   --pm-people-bd:var(--pm-coral-400);
+  --pm-people-tx:var(--pm-coral-800);  --pm-people-sl:var(--pm-coral-400);
+
+  --pm-process-bg:var(--pm-purple-50); --pm-process-bd:var(--pm-purple-600);
+  --pm-process-tx:var(--pm-purple-800);--pm-process-sl:var(--pm-purple-600);
+
+  --pm-tools-bg:var(--pm-blue-50);     --pm-tools-bd:var(--pm-blue-600);
+  --pm-tools-tx:var(--pm-blue-800);    --pm-tools-sl:var(--pm-blue-600);
+
+  --pm-env-bg:var(--pm-teal-50);       --pm-env-bd:var(--pm-teal-400);
+  --pm-env-tx:var(--pm-teal-800);      --pm-env-sl:var(--pm-teal-400);
+
+  --pm-mat-bg:var(--pm-amber-50);      --pm-mat-bd:var(--pm-amber-400);
+  --pm-mat-tx:var(--pm-amber-800);     --pm-mat-sl:var(--pm-amber-400);
+
+  --pm-meas-bg:var(--pm-gray-50);      --pm-meas-bd:var(--pm-gray-400);
+  --pm-meas-tx:var(--pm-gray-800);     --pm-meas-sl:var(--pm-gray-600);
+
+  /* Status tokens — light mode */
+  --pm-good-bg:var(--pm-green-50);  --pm-good-tx:var(--pm-green-800); --pm-good-bd:var(--pm-green-400);
+  --pm-warn-bg:var(--pm-amber-50);  --pm-warn-tx:var(--pm-amber-800); --pm-warn-bd:var(--pm-amber-400);
+  --pm-bad-bg:var(--pm-red-50);     --pm-bad-tx:var(--pm-red-800);    --pm-bad-bd:var(--pm-red-400);
+  --pm-info-bg:var(--pm-blue-50);   --pm-info-tx:var(--pm-blue-800);  --pm-info-bd:var(--pm-blue-600);
+
+  /* Chart.js tokens */
+  --pm-chart-grid:rgba(0,0,0,0.07);
+  --pm-chart-axis:#888780;
+  --pm-chart-tooltip-bg:#ffffff;
+  --pm-chart-tooltip-bd:rgba(0,0,0,0.15);
+  --pm-chart-tooltip-tx:#2C2C2A;
+
+  /* Surfaces */
+  --pm-surface:#ffffff;
+  --pm-surface-sub:#F1EFE8;
+  --pm-border:rgba(0,0,0,0.10);
+  --pm-border-strong:rgba(0,0,0,0.20);
+  --pm-tx-primary:#2C2C2A;
+  --pm-tx-secondary:#5F5E5A;
+  --pm-tx-tertiary:#888780;
+
+  /* Radius */
+  --pm-radius-sm:6px;  --pm-radius-md:8px;
+  --pm-radius-lg:12px; --pm-radius-pill:20px;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pm-people-bg:var(--pm-coral-900);   --pm-people-bd:var(--pm-coral-200);   --pm-people-tx:var(--pm-coral-50);
+    --pm-process-bg:var(--pm-purple-900); --pm-process-bd:var(--pm-purple-200); --pm-process-tx:var(--pm-purple-50);
+    --pm-tools-bg:var(--pm-blue-900);     --pm-tools-bd:var(--pm-blue-200);     --pm-tools-tx:var(--pm-blue-50);
+    --pm-env-bg:var(--pm-teal-900);       --pm-env-bd:var(--pm-teal-200);       --pm-env-tx:var(--pm-teal-50);
+    --pm-mat-bg:var(--pm-amber-900);      --pm-mat-bd:var(--pm-amber-200);      --pm-mat-tx:var(--pm-amber-50);
+    --pm-meas-bg:var(--pm-gray-900);      --pm-meas-bd:var(--pm-gray-200);      --pm-meas-tx:var(--pm-gray-50);
+
+    --pm-good-bg:var(--pm-green-900);  --pm-good-tx:var(--pm-green-50);  --pm-good-bd:var(--pm-green-400);
+    --pm-warn-bg:var(--pm-amber-900);  --pm-warn-tx:var(--pm-amber-50);  --pm-warn-bd:var(--pm-amber-400);
+    --pm-bad-bg:var(--pm-red-900);     --pm-bad-tx:var(--pm-red-50);     --pm-bad-bd:var(--pm-red-400);
+    --pm-info-bg:var(--pm-blue-900);   --pm-info-tx:var(--pm-blue-50);   --pm-info-bd:var(--pm-blue-400);
+
+    --pm-chart-grid:rgba(255,255,255,0.08);
+    --pm-chart-axis:#B4B2A9;
+    --pm-chart-tooltip-bg:#2C2C2A;
+    --pm-chart-tooltip-bd:rgba(255,255,255,0.15);
+    --pm-chart-tooltip-tx:#F1EFE8;
+
+    --pm-surface:#1a1a18;
+    --pm-surface-sub:#242422;
+    --pm-border:rgba(255,255,255,0.10);
+    --pm-border-strong:rgba(255,255,255,0.20);
+    --pm-tx-primary:#F1EFE8;
+    --pm-tx-secondary:#B4B2A9;
+    --pm-tx-tertiary:#888780;
+  }
+}
+
+/* ── Base reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  color: var(--pm-tx-primary);
+  background: var(--pm-surface-sub);
+  margin: 0; padding: 0;
+  line-height: 1.5;
+}
+
+/* ── Shared components ──────────────────────────────────────── */
+
+.pm-tab-btn {
+  font-size: 12px; padding: 5px 14px;
+  border: 0.5px solid var(--pm-border-strong);
+  border-radius: var(--pm-radius-pill);
+  background: transparent;
+  color: var(--pm-tx-secondary);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.pm-tab-btn.on {
+  background: var(--pm-coral-400);
+  color: #fff;
+  border-color: var(--pm-coral-400);
+}
+
+.pm-kpi {
+  background: var(--pm-surface);
+  border: 0.5px solid var(--pm-border);
+  border-radius: var(--pm-radius-md);
+  padding: .65rem .875rem;
+  text-align: center;
+}
+.pm-kpi-good { background:var(--pm-good-bg); border-color:var(--pm-good-bd); color:var(--pm-good-tx); }
+.pm-kpi-warn { background:var(--pm-warn-bg); border-color:var(--pm-warn-bd); color:var(--pm-warn-tx); }
+.pm-kpi-bad  { background:var(--pm-bad-bg);  border-color:var(--pm-bad-bd);  color:var(--pm-bad-tx); }
+.pm-kpi-info { background:var(--pm-info-bg); border-color:var(--pm-info-bd); color:var(--pm-info-tx); }
+
+.pm-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--pm-radius-pill);
+  cursor: pointer;
+  border: 0.5px solid transparent;
+  transition: transform .1s;
+}
+.pm-chip:hover { transform: scale(1.04); }
+
+.pm-insight {
+  border-radius: var(--pm-radius-md);
+  padding: .75rem 1rem;
+  font-size: 12px;
+  line-height: 1.65;
+  margin-top: 10px;
+}
+
+.pm-slider-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--pm-border);
+  font-size: 12px;
+}
+.pm-slider-row:last-child { border-bottom: none; }
+
+/* Chart page layout */
+.chart-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+.chart-title {
+  font-size: 22px; font-weight: 500;
+  color: var(--pm-tx-primary);
+  margin: 0 0 6px;
+}
+.chart-subtitle {
+  font-size: 14px; color: var(--pm-tx-secondary);
+  margin: 0 0 24px; line-height: 1.6;
+}
+.doc-section {
+  margin-top: 32px;
+  border-top: 0.5px solid var(--pm-border);
+  padding-top: 20px;
+}
+.doc-title {
+  font-size: 14px; font-weight: 500;
+  color: var(--pm-tx-primary);
+  margin: 0 0 10px;
+}
+.doc-body {
+  font-size: 13px; color: var(--pm-tx-secondary);
+  line-height: 1.75;
+}
+.doc-body strong { color: var(--pm-tx-primary); font-weight: 500; }
+.doc-body p { margin: 0 0 10px; }
+.doc-body p:last-child { margin-bottom: 0; }
+
+.expert-tip {
+  background: var(--pm-people-bg);
+  border: 0.5px solid var(--pm-people-bd);
+  border-radius: var(--pm-radius-md);
+  padding: 14px 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--pm-people-tx);
+  line-height: 1.65;
+}

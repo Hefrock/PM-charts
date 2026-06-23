@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pareto chart — PM Chart Library</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/nav.js"></script>
+  <style>
+    /* Chart-specific overrides — no hardcoded colours, use token vars */
+    .widget-wrap {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-lg);
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pm-nav"></div>
+  <div class="chart-wrap">
+
+    <h1 class="chart-title">Pareto chart</h1>
+    <p class="chart-subtitle">The 20% of causes driving 80% of your problems.</p>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTERACTIVE WIDGET
+         Claude Code: replace this placeholder with the full
+         verified widget HTML + CSS + JS from the session brief.
+         All colours must use --pm-* CSS variables.
+         Chart.js charts must read --pm-chart-* vars at runtime.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="widget-wrap">
+      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
+        <div style="text-align:center">
+          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
+          Widget placeholder — Chart 11: Pareto chart<br>
+          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation -->
+    <div class="doc-section">
+      <h2 class="doc-title">What you are looking at</h2>
+      <div class="doc-body"><p>Bars are causes sorted descending by frequency — biggest problem on the left. Amber bars are the vital few that together drive 80% of all issues. Gray bars are the trivial many. The purple cumulative line climbs toward 100%. The red dashed line marks the 80% threshold. The simulator tab lets you drag each cause's count and watch the 80/20 line, vital few count and KPI cards recalculate live. The data sets tab loads four industry examples.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">What most PMs miss</h2>
+      <div class="doc-body"><p>Teams list all causes, debate all of them, and assign actions for all of them. Six weeks later nothing has changed because effort was spread across everything. The Pareto chart exists to make a different decision: choose the top two or three causes and fix only those. That focus is uncomfortable but it is where the result comes from.</p></div>
+    </div>
+
+    <div class="doc-section">
+      <h2 class="doc-title">The expert tip</h2>
+      <div class="expert-tip">After identifying the vital few causes, run the 5 Whys down each one before assigning any action. The cause on the Pareto is always a symptom. 'Unclear requirements' is never the root cause — it is the result of something deeper. The Pareto tells you where to dig. The 5 Whys tells you what to actually fix. Used together in a retrospective they produce actions that prevent recurrence rather than actions that simply respond to symptoms.</div>
+    </div>
+
+  </div>
+</body>
+</html>
