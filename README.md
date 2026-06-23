@@ -34,7 +34,7 @@ Built as a visual reference and learning tool — fully interactive with simulat
 ## Hosting on GitHub Pages
 
 This repository is configured to publish from the `main` branch (root folder) via Settings then Pages.
-The site is live at https://hefrock.github.io/pm-charts/
+The site is live at https://hefrock.github.io/PM-charts/
 
 ## Development
 
