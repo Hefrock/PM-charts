@@ -6,7 +6,7 @@
   <title>Control chart — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -16,6 +16,72 @@
       border-radius: var(--pm-radius-lg);
       padding: 20px;
       margin-bottom: 8px;
+    }
+    .cc-chart-shell {
+      position: relative;
+      height: 300px;
+      margin-bottom: 14px;
+    }
+    .cc-sim-panel {
+      background: var(--pm-surface-sub);
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      padding: 8px 14px;
+      margin-bottom: 14px;
+    }
+    .cc-sim-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+      margin: 6px 0 2px;
+    }
+    .pm-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--pm-green-400);
+    }
+    .pm-slider-row label {
+      min-width: 100px;
+      color: var(--pm-tx-secondary);
+    }
+    .cc-slider-val {
+      min-width: 56px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+    }
+    .cc-sim-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .cc-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .cc-kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      opacity: .75;
+      margin-bottom: 4px;
+    }
+    .cc-kpi-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .cc-rule-list {
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+      line-height: 1.7;
+      margin: 0;
+      padding-left: 18px;
+    }
+    .cc-rule-list li { margin-bottom: 4px; }
+    @media (max-width: 640px) {
+      .cc-stats-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -34,12 +100,46 @@
          Chart.js charts must read --pm-chart-* vars at runtime.
          ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 14: Control chart<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="cc-stats-row">
+        <div class="pm-kpi pm-kpi-info">
+          <div class="cc-kpi-label">Mean</div>
+          <div class="cc-kpi-value" id="ccKpiMean">—</div>
         </div>
+        <div class="pm-kpi pm-kpi-info">
+          <div class="cc-kpi-label">UCL / LCL (±3σ)</div>
+          <div class="cc-kpi-value" id="ccKpiLimits">—</div>
+        </div>
+        <div class="pm-kpi" id="ccKpiSignalsCard">
+          <div class="cc-kpi-label">Signals detected</div>
+          <div class="cc-kpi-value" id="ccKpiSignals">—</div>
+        </div>
+      </div>
+
+      <div class="cc-chart-shell">
+        <canvas id="ccCanvas" aria-label="Control chart of sequential measurements with mean, UCL and LCL" role="img"></canvas>
+      </div>
+
+      <div class="cc-sim-panel">
+        <div class="cc-sim-title">Simulator</div>
+        <div class="pm-slider-row">
+          <label for="ccSlMean">Process mean</label>
+          <input type="range" id="ccSlMean" min="5" max="40" step="1" value="18">
+          <span class="cc-slider-val" id="ccSlMeanVal">18</span>
+        </div>
+        <div class="pm-slider-row">
+          <label for="ccSlSigma">Sigma (σ)</label>
+          <input type="range" id="ccSlSigma" min="1" max="8" step="0.5" value="3">
+          <span class="cc-slider-val" id="ccSlSigmaVal">3.0</span>
+        </div>
+        <div class="cc-sim-actions">
+          <button class="pm-tab-btn on" id="ccBtnRegenerate" type="button">Regenerate data</button>
+          <button class="pm-tab-btn" id="ccBtnSpike" type="button">Inject special-cause spike</button>
+        </div>
+      </div>
+
+      <div class="pm-insight" id="ccRuleInsight" style="background:var(--pm-surface-sub);color:var(--pm-tx-secondary);">
+        <strong style="color:var(--pm-tx-primary);">Western Electric rule checks</strong>
+        <ul class="cc-rule-list" id="ccRuleList"></ul>
       </div>
     </div>
 
@@ -60,5 +160,289 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    var N = 24;
+    var canvas = document.getElementById('ccCanvas');
+    var chart = null;
+
+    var slMean = document.getElementById('ccSlMean');
+    var slSigma = document.getElementById('ccSlSigma');
+    var slMeanVal = document.getElementById('ccSlMeanVal');
+    var slSigmaVal = document.getElementById('ccSlSigmaVal');
+    var btnRegenerate = document.getElementById('ccBtnRegenerate');
+    var btnSpike = document.getElementById('ccBtnSpike');
+
+    var data = [];
+    var spikeInjected = false;
+
+    // Simple deterministic-ish pseudo-random generator (Box-Muller) for normal variation.
+    function randNormal(){
+      var u1 = Math.random(), u2 = Math.random();
+      return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    }
+
+    function generateData(mean, sigma){
+      var arr = [];
+      for (var i = 0; i < N; i++){
+        arr.push(mean + randNormal() * sigma);
+      }
+      // Inject a couple of plausible special-cause points by default to make the chart interesting:
+      // a run trending upward around index 10-15, and an out-of-control spike near the end.
+      var trendStart = 9, trendLen = 6;
+      for (var t = 0; t < trendLen && (trendStart + t) < N; t++){
+        arr[trendStart + t] = mean + sigma * (0.2 * t - 0.3) + randNormal() * sigma * 0.3;
+      }
+      arr[N - 3] = mean + sigma * 4.2; // out-of-control spike
+      return arr.map(function(v){ return Math.max(0, Math.round(v * 10) / 10); });
+    }
+
+    function injectSpike(arr, mean, sigma){
+      var copy = arr.slice();
+      var idx = Math.floor(N * 0.6);
+      copy[idx] = Math.max(0, Math.round((mean + sigma * 4.5) * 10) / 10);
+      return copy;
+    }
+
+    function computeStats(arr){
+      var mean = arr.reduce(function(a,b){return a+b;}, 0) / arr.length;
+      var variance = arr.reduce(function(a,b){ return a + Math.pow(b - mean, 2); }, 0) / arr.length;
+      var sigma = Math.sqrt(variance);
+      return { mean: mean, sigma: sigma };
+    }
+
+    // Western Electric rule checks. Returns { flags: bool[], messages: string[] }
+    function runRuleChecks(arr, mean, sigma){
+      var ucl = mean + 3 * sigma;
+      var lcl = Math.max(0, mean - 3 * sigma);
+      var n = arr.length;
+      var flags = new Array(n).fill(false);
+      var messages = [];
+
+      // Rule 1: point outside UCL/LCL
+      var rule1Idx = [];
+      for (var i = 0; i < n; i++){
+        if (arr[i] > ucl || arr[i] < lcl){
+          flags[i] = true;
+          rule1Idx.push(i);
+        }
+      }
+      if (rule1Idx.length){
+        messages.push('Rule 1 (point beyond control limits) triggered at index ' + rule1Idx.join(', ') + '.');
+      }
+
+      // Rule 2: run of 8+ consecutive points on the same side of the mean
+      var rule2Idx = [];
+      var i2 = 0;
+      while (i2 < n){
+        var side = arr[i2] > mean ? 1 : (arr[i2] < mean ? -1 : 0);
+        if (side === 0){ i2++; continue; }
+        var j2 = i2;
+        while (j2 < n && (arr[j2] > mean ? 1 : (arr[j2] < mean ? -1 : 0)) === side) j2++;
+        if (j2 - i2 >= 8){
+          for (var k2 = i2; k2 < j2; k2++){ flags[k2] = true; rule2Idx.push(k2); }
+        }
+        i2 = j2;
+      }
+      if (rule2Idx.length){
+        messages.push('Rule 2 (8+ consecutive points on the same side of the mean) triggered at index ' + rule2Idx.join(', ') + '.');
+      }
+
+      // Rule 3: run of 6+ consecutive strictly increasing or decreasing points
+      var rule3Idx = [];
+      var i3 = 0;
+      while (i3 < n - 1){
+        var dir = arr[i3 + 1] > arr[i3] ? 1 : (arr[i3 + 1] < arr[i3] ? -1 : 0);
+        if (dir === 0){ i3++; continue; }
+        var j3 = i3 + 1;
+        while (j3 < n - 1 && (arr[j3 + 1] > arr[j3] ? 1 : (arr[j3 + 1] < arr[j3] ? -1 : 0)) === dir) j3++;
+        var runLen = j3 - i3 + 1; // number of points in the monotonic run
+        if (runLen >= 6){
+          for (var k3 = i3; k3 <= j3; k3++){ flags[k3] = true; rule3Idx.push(k3); }
+        }
+        i3 = j3;
+      }
+      if (rule3Idx.length){
+        messages.push('Rule 3 (6+ consecutive increasing or decreasing points) triggered at index ' + rule3Idx.join(', ') + '.');
+      }
+
+      if (!messages.length){
+        messages.push('No Western Electric rule violations detected — variation looks like normal common-cause noise.');
+      }
+
+      return { flags: flags, ucl: ucl, lcl: lcl, messages: messages, totalSignals: rule1Idx.length + (rule2Idx.length ? 1 : 0) + (rule3Idx.length ? 1 : 0) };
+    }
+
+    function readColors(){
+      var css = getComputedStyle(document.documentElement);
+      return {
+        grid: css.getPropertyValue('--pm-chart-grid').trim(),
+        axis: css.getPropertyValue('--pm-chart-axis').trim(),
+        tooltipBg: css.getPropertyValue('--pm-chart-tooltip-bg').trim(),
+        tooltipBd: css.getPropertyValue('--pm-chart-tooltip-bd').trim(),
+        tooltipTx: css.getPropertyValue('--pm-chart-tooltip-tx').trim(),
+        green: css.getPropertyValue('--pm-green-400').trim(),
+        red: css.getPropertyValue('--pm-red-400').trim(),
+        blue: css.getPropertyValue('--pm-blue-400').trim(),
+        bad: css.getPropertyValue('--pm-bad-bd').trim()
+      };
+    }
+
+    function buildOrUpdateChart(){
+      var stats = computeStats(data);
+      var result = runRuleChecks(data, stats.mean, stats.sigma);
+      var c = readColors();
+
+      var labels = [];
+      for (var i = 0; i < N; i++) labels.push(String(i));
+
+      var meanLine = new Array(N).fill(Math.round(stats.mean * 100) / 100);
+      var uclLine = new Array(N).fill(Math.round(result.ucl * 100) / 100);
+      var lclLine = new Array(N).fill(Math.round(result.lcl * 100) / 100);
+
+      var pointBg = data.map(function(v, idx){ return result.flags[idx] ? c.bad : c.blue; });
+      var pointRadius = data.map(function(v, idx){ return result.flags[idx] ? 6 : 3; });
+
+      document.getElementById('ccKpiMean').textContent = stats.mean.toFixed(2);
+      document.getElementById('ccKpiLimits').textContent = result.ucl.toFixed(1) + ' / ' + result.lcl.toFixed(1);
+      var signalsCard = document.getElementById('ccKpiSignalsCard');
+      var signalsVal = document.getElementById('ccKpiSignals');
+      var flaggedCount = result.flags.filter(Boolean).length;
+      signalsVal.textContent = flaggedCount === 0 ? 'None' : (flaggedCount + ' point' + (flaggedCount === 1 ? '' : 's'));
+      signalsCard.className = 'pm-kpi ' + (flaggedCount === 0 ? 'pm-kpi-good' : 'pm-kpi-bad');
+
+      var ruleList = document.getElementById('ccRuleList');
+      ruleList.innerHTML = '';
+      result.messages.forEach(function(msg){
+        var li = document.createElement('li');
+        li.textContent = msg;
+        ruleList.appendChild(li);
+      });
+
+      var datasets = [
+        {
+          label: 'Measurement',
+          data: data,
+          borderColor: c.blue,
+          backgroundColor: pointBg,
+          pointBackgroundColor: pointBg,
+          pointBorderColor: pointBg,
+          pointRadius: pointRadius,
+          borderWidth: 1.5,
+          tension: 0
+        },
+        {
+          label: 'Mean',
+          data: meanLine,
+          borderColor: c.green,
+          backgroundColor: c.green,
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0
+        },
+        {
+          label: 'UCL',
+          data: uclLine,
+          borderColor: c.red,
+          backgroundColor: c.red,
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0
+        },
+        {
+          label: 'LCL',
+          data: lclLine,
+          borderColor: c.red,
+          backgroundColor: c.red,
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0
+        }
+      ];
+
+      var options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: c.axis, font: { size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: c.tooltipBg,
+            borderColor: c.tooltipBd,
+            borderWidth: 1,
+            titleColor: c.tooltipTx,
+            bodyColor: c.tooltipTx
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: c.grid },
+            ticks: { color: c.axis, font: { size: 10 } },
+            title: { display: true, text: 'Measurement index', color: c.axis, font: { size: 11 } }
+          },
+          y: {
+            grid: { color: c.grid },
+            ticks: { color: c.axis, font: { size: 11 } },
+            title: { display: true, text: 'Value', color: c.axis, font: { size: 11 } }
+          }
+        }
+      };
+
+      if (!chart){
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: options
+        });
+      } else {
+        chart.data.labels = labels;
+        chart.data.datasets = datasets;
+        chart.options = options;
+        chart.update();
+      }
+    }
+
+    function regenerate(){
+      var mean = parseFloat(slMean.value);
+      var sigma = parseFloat(slSigma.value);
+      data = generateData(mean, sigma);
+      spikeInjected = false;
+      buildOrUpdateChart();
+    }
+
+    slMean.addEventListener('input', function(){
+      slMeanVal.textContent = slMean.value;
+    });
+    slSigma.addEventListener('input', function(){
+      slSigmaVal.textContent = parseFloat(slSigma.value).toFixed(1);
+    });
+
+    btnRegenerate.addEventListener('click', regenerate);
+
+    btnSpike.addEventListener('click', function(){
+      var mean = parseFloat(slMean.value);
+      var sigma = parseFloat(slSigma.value);
+      data = injectSpike(data, mean, sigma);
+      spikeInjected = true;
+      buildOrUpdateChart();
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      buildOrUpdateChart();
+    });
+
+    // Initial dataset
+    slMeanVal.textContent = slMean.value;
+    slSigmaVal.textContent = parseFloat(slSigma.value).toFixed(1);
+    data = generateData(parseFloat(slMean.value), parseFloat(slSigma.value));
+    buildOrUpdateChart();
+  })();
+  </script>
 </body>
 </html>

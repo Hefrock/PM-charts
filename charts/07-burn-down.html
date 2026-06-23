@@ -6,7 +6,7 @@
   <title>Burn-down chart — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -16,6 +16,39 @@
       border-radius: var(--pm-radius-lg);
       padding: 20px;
       margin-bottom: 8px;
+    }
+    .bd-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .bd-top-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .bd-status-kpi {
+      min-width: 160px;
+    }
+    .bd-chart-shell {
+      position: relative;
+      height: 300px;
+      margin-bottom: 8px;
+    }
+    .bd-kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      opacity: .75;
+      margin-bottom: 4px;
+    }
+    .bd-kpi-value {
+      font-size: 16px;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -34,12 +67,22 @@
          Chart.js charts must read --pm-chart-* vars at runtime.
          ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 07: Burn-down chart<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="bd-tabs" id="bdTabs">
+        <button class="pm-tab-btn on" data-scenario="healthy" type="button">Healthy</button>
+        <button class="pm-tab-btn" data-scenario="slow" type="button">Slow start</button>
+        <button class="pm-tab-btn" data-scenario="scope" type="button">Scope creep</button>
+        <button class="pm-tab-btn" data-scenario="heroic" type="button">Heroic recovery</button>
+      </div>
+
+      <div class="bd-top-row">
+        <div class="pm-kpi bd-status-kpi" id="bdStatusKpi">
+          <div class="bd-kpi-label">Sprint status (day 7)</div>
+          <div class="bd-kpi-value" id="bdStatusVal">—</div>
         </div>
+      </div>
+
+      <div class="bd-chart-shell">
+        <canvas id="bdCanvas" aria-label="Burn-down chart of story points remaining" role="img"></canvas>
       </div>
     </div>
 
@@ -60,5 +103,213 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    var TOTAL_POINTS = 50;
+    var SPRINT_DAYS = 10;
+    var TODAY = 7; // day index considered "today" (1-based day 7 of 10)
+
+    var labels = [];
+    for (var d = 0; d <= SPRINT_DAYS; d++) labels.push('Day ' + d);
+
+    // Ideal burn: straight line from 50 to 0 over 10 days.
+    var ideal = [];
+    for (var i = 0; i <= SPRINT_DAYS; i++){
+      ideal.push(Math.round(TOTAL_POINTS - (TOTAL_POINTS / SPRINT_DAYS) * i));
+    }
+    ideal[SPRINT_DAYS] = 0;
+
+    // Scenario definitions: remaining points at each day 0..10 (day 0 = 50 always).
+    var scenarios = {
+      healthy: [50, 45, 40, 34, 28, 23, 18, 13, 9, 4, 0],
+      slow: [50, 49, 48, 46, 40, 34, 28, 22, 15, 8, 2],
+      scope: [50, 44, 39, 34, 30, 32, 36, 32, 26, 18, 9],
+      heroic: [50, 48, 47, 46, 45, 44, 42, 38, 26, 12, 0]
+    };
+
+    var tabsWrap = document.getElementById('bdTabs');
+    var canvas = document.getElementById('bdCanvas');
+    var statusCard = document.getElementById('bdStatusKpi');
+    var statusVal = document.getElementById('bdStatusVal');
+    var chart = null;
+    var currentScenario = 'healthy';
+
+    function readColors(){
+      var css = getComputedStyle(document.documentElement);
+      return {
+        grid: css.getPropertyValue('--pm-chart-grid').trim(),
+        axis: css.getPropertyValue('--pm-chart-axis').trim(),
+        tooltipBg: css.getPropertyValue('--pm-chart-tooltip-bg').trim(),
+        tooltipBd: css.getPropertyValue('--pm-chart-tooltip-bd').trim(),
+        tooltipTx: css.getPropertyValue('--pm-chart-tooltip-tx').trim(),
+        gray: css.getPropertyValue('--pm-gray-400').trim(),
+        blue: css.getPropertyValue('--pm-blue-400').trim(),
+        red: css.getPropertyValue('--pm-red-400').trim(),
+        amber: css.getPropertyValue('--pm-amber-400').trim()
+      };
+    }
+
+    function buildForecast(actualUpToToday){
+      var series = new Array(SPRINT_DAYS + 1).fill(null);
+      series[TODAY] = actualUpToToday[TODAY];
+      // recent burn rate = average of last 3 days of actual data
+      var lookback = Math.min(3, TODAY);
+      var deltas = [];
+      for (var i = TODAY - lookback + 1; i <= TODAY; i++){
+        deltas.push(actualUpToToday[i - 1] - actualUpToToday[i]);
+      }
+      var avgRate = deltas.reduce(function(a,b){return a+b;}, 0) / deltas.length;
+      if (avgRate <= 0) avgRate = 0.5; // avoid flat/negative forecast
+      var remaining = actualUpToToday[TODAY];
+      for (var day = TODAY + 1; day <= SPRINT_DAYS; day++){
+        remaining = Math.max(0, remaining - avgRate);
+        series[day] = Math.round(remaining);
+      }
+      return series;
+    }
+
+    function buildOrUpdateChart(){
+      var data = scenarios[currentScenario];
+      var actualSeries = data.slice(0, TODAY + 1);
+      var actualFull = new Array(SPRINT_DAYS + 1).fill(null);
+      for (var i = 0; i <= TODAY; i++) actualFull[i] = data[i];
+
+      var forecastSeries = buildForecast(data);
+
+      var c = readColors();
+
+      // Point colors: red on "danger" days (actual > 1.2x ideal), else blue.
+      var pointColors = actualFull.map(function(v, idx){
+        if (v === null) return c.blue;
+        if (ideal[idx] > 0 && v > ideal[idx] * 1.2) return c.red;
+        return c.blue;
+      });
+      var pointRadii = actualFull.map(function(v, idx){
+        if (v === null) return 0;
+        return (ideal[idx] > 0 && v > ideal[idx] * 1.2) ? 5 : 3;
+      });
+
+      // Status KPI based on today's gap vs ideal.
+      var todayActual = data[TODAY];
+      var todayIdeal = ideal[TODAY];
+      var gapPct = todayIdeal > 0 ? (todayActual - todayIdeal) / TOTAL_POINTS : 0;
+      var statusLabel, statusClass;
+      if (gapPct <= 0.05){
+        statusLabel = 'On track'; statusClass = 'pm-kpi-good';
+      } else if (gapPct <= 0.20){
+        statusLabel = 'At risk'; statusClass = 'pm-kpi-warn';
+      } else {
+        statusLabel = 'Critical'; statusClass = 'pm-kpi-bad';
+      }
+      statusVal.textContent = statusLabel + ' (' + todayActual + ' pts left vs ' + todayIdeal + ' ideal)';
+      statusCard.className = 'pm-kpi bd-status-kpi ' + statusClass;
+
+      var datasets = [
+        {
+          label: 'Ideal burn',
+          data: ideal,
+          borderColor: c.gray,
+          backgroundColor: c.gray,
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0
+        },
+        {
+          label: 'Actual remaining',
+          data: actualFull,
+          borderColor: c.blue,
+          backgroundColor: c.blue,
+          borderWidth: 2,
+          pointRadius: pointRadii,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: pointColors,
+          tension: 0.25,
+          spanGaps: false
+        },
+        {
+          label: 'Forecast',
+          data: forecastSeries,
+          borderColor: c.amber,
+          backgroundColor: c.amber,
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 2,
+          tension: 0,
+          spanGaps: false
+        }
+      ];
+
+      var options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: c.axis, font: { size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: c.tooltipBg,
+            borderColor: c.tooltipBd,
+            borderWidth: 1,
+            titleColor: c.tooltipTx,
+            bodyColor: c.tooltipTx,
+            callbacks: {
+              label: function(ctx){
+                if (ctx.parsed.y === null || ctx.parsed.y === undefined) return null;
+                return ctx.dataset.label + ': ' + ctx.parsed.y + ' pts';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: c.grid },
+            ticks: { color: c.axis, font: { size: 11 } }
+          },
+          y: {
+            grid: { color: c.grid },
+            beginAtZero: true,
+            ticks: { color: c.axis, font: { size: 11 } },
+            title: { display: true, text: 'Story points remaining', color: c.axis, font: { size: 11 } }
+          }
+        }
+      };
+
+      if (!chart){
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: options
+        });
+      } else {
+        chart.data.labels = labels;
+        chart.data.datasets = datasets;
+        chart.options = options;
+        chart.update();
+      }
+    }
+
+    tabsWrap.addEventListener('click', function(e){
+      var btn = e.target.closest('.pm-tab-btn');
+      if (!btn) return;
+      var scenario = btn.getAttribute('data-scenario');
+      if (!scenario || scenario === currentScenario) return;
+      currentScenario = scenario;
+      Array.prototype.forEach.call(tabsWrap.querySelectorAll('.pm-tab-btn'), function(b){
+        b.classList.toggle('on', b === btn);
+      });
+      buildOrUpdateChart();
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      buildOrUpdateChart();
+    });
+
+    buildOrUpdateChart();
+  })();
+  </script>
 </body>
 </html>

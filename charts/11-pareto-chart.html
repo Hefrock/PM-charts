@@ -6,7 +6,7 @@
   <title>Pareto chart — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +17,93 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+    .pc-chart-box {
+      position: relative;
+      height: 340px;
+      margin-bottom: 14px;
+    }
+    .pc-vital-row {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin: 10px 0 16px;
+    }
+    .pc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+    .pc-table th, .pc-table td {
+      text-align: left;
+      padding: 7px 10px;
+      border-bottom: 0.5px solid var(--pm-border);
+    }
+    .pc-table th {
+      color: var(--pm-tx-secondary);
+      font-weight: 500;
+      font-size: 11px;
+    }
+    .pc-table td.pc-name { font-weight: 500; color: var(--pm-tx-primary); }
+    .pc-table td.pc-num { white-space: nowrap; font-weight: 600; }
+    .pc-vital-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--pm-mat-bd);
+      display: inline-block;
+    }
+    .pc-sim-name {
+      flex: 0 0 170px;
+      color: var(--pm-tx-primary);
+      font-weight: 500;
+    }
+    .pc-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--pm-coral-400);
+    }
+    .pc-sim-val {
+      flex: 0 0 40px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+    }
+    .pc-section-label {
+      font-size: 13px; font-weight: 500;
+      color: var(--pm-tx-primary);
+      margin: 0 0 8px;
+    }
+    .pc-tabs {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .pc-panel { display: none; }
+    .pc-panel.on { display: block; }
+    .pc-kpi-row {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 16px;
+    }
+    .pc-kpi-label { font-size: 11px; color: var(--pm-tx-secondary); margin-bottom: 3px; }
+    .pc-kpi-value { font-size: 19px; font-weight: 600; }
+    .pc-dataset-btn {
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-md);
+      padding: 10px 14px;
+      cursor: pointer;
+      text-align: left;
+      min-width: 170px;
+      flex: 1 1 170px;
+    }
+    .pc-dataset-btn.on {
+      border-color: var(--pm-coral-400);
+      box-shadow: inset 0 0 0 1px var(--pm-coral-400);
+    }
+    .pc-dataset-btn strong {
+      display: block; font-size: 13px; margin-bottom: 3px;
+      color: var(--pm-tx-primary);
+    }
+    .pc-dataset-btn span {
+      font-size: 11px; color: var(--pm-tx-secondary);
+    }
+    .pc-slider-row {
+      display: flex; align-items: center; gap: 10px;
+    }
   </style>
 </head>
 <body>
@@ -26,20 +113,36 @@
     <h1 class="chart-title">Pareto chart</h1>
     <p class="chart-subtitle">The 20% of causes driving 80% of your problems.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 11: Pareto chart<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
-        </div>
+      <div class="pc-tabs" role="tablist">
+        <button type="button" class="pm-tab-btn on" data-pc-tab="chart">Chart</button>
+        <button type="button" class="pm-tab-btn" data-pc-tab="sim">Simulator</button>
+        <button type="button" class="pm-tab-btn" data-pc-tab="data">Data sets</button>
+      </div>
+
+      <!-- Chart tab -->
+      <div class="pc-panel on" data-pc-panel="chart">
+        <div class="pc-chart-box"><canvas id="pc-chart-main" aria-label="Pareto chart of causes" role="img"></canvas></div>
+        <div class="pc-kpi-row" id="pc-kpi-row"></div>
+        <p class="pc-section-label">Causes ranked by frequency</p>
+        <table class="pc-table">
+          <thead><tr><th>Cause</th><th>Frequency</th><th>%</th><th>Cumulative %</th></tr></thead>
+          <tbody id="pc-table-body"></tbody>
+        </table>
+        <p class="pc-section-label">Vital few — driving 80% of issues</p>
+        <div class="pc-vital-row" id="pc-vital-row"></div>
+      </div>
+
+      <!-- Simulator tab -->
+      <div class="pc-panel" data-pc-panel="sim">
+        <p class="pc-section-label">Drag a cause's count and watch the chart, table and KPIs recalculate</p>
+        <div id="pc-sim-sliders"></div>
+      </div>
+
+      <!-- Data sets tab -->
+      <div class="pc-panel" data-pc-panel="data">
+        <p class="pc-section-label">Load a different industry example</p>
+        <div class="pc-vital-row" id="pc-dataset-buttons"></div>
       </div>
     </div>
 
@@ -60,5 +163,326 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var DATASETS = [
+      {
+        key: 'software', name: 'Software defects', blurb: 'Causes of task slippage',
+        causes: [
+          { id: 'c1', name: 'Unclear requirements', count: 42 },
+          { id: 'c2', name: 'Dependency delays', count: 28 },
+          { id: 'c3', name: 'Scope creep', count: 19 },
+          { id: 'c4', name: 'Resource unavailability', count: 14 },
+          { id: 'c5', name: 'Tooling / environment issues', count: 9 },
+          { id: 'c6', name: 'Poor estimation', count: 6 },
+          { id: 'c7', name: 'Communication gaps', count: 4 }
+        ]
+      },
+      {
+        key: 'construction', name: 'Construction delays', blurb: 'Causes of schedule slippage',
+        causes: [
+          { id: 'c1', name: 'Weather', count: 35 },
+          { id: 'c2', name: 'Permit delays', count: 22 },
+          { id: 'c3', name: 'Material shortages', count: 16 },
+          { id: 'c4', name: 'Subcontractor scheduling', count: 11 },
+          { id: 'c5', name: 'Design changes', count: 8 },
+          { id: 'c6', name: 'Equipment failure', count: 5 },
+          { id: 'c7', name: 'Labor shortage', count: 3 }
+        ]
+      },
+      {
+        key: 'support', name: 'Customer complaints', blurb: 'Causes of support tickets',
+        causes: [
+          { id: 'c1', name: 'Long wait times', count: 38 },
+          { id: 'c2', name: 'Billing errors', count: 24 },
+          { id: 'c3', name: 'Product defects', count: 17 },
+          { id: 'c4', name: 'Website issues', count: 12 },
+          { id: 'c5', name: 'Shipping delays', count: 7 },
+          { id: 'c6', name: 'Rude staff', count: 5 },
+          { id: 'c7', name: 'Unclear policies', count: 3 }
+        ]
+      },
+      {
+        key: 'manufacturing', name: 'Manufacturing defects', blurb: 'Causes of QA rejects',
+        causes: [
+          { id: 'c1', name: 'Operator error', count: 40 },
+          { id: 'c2', name: 'Machine miscalibration', count: 26 },
+          { id: 'c3', name: 'Raw material defects', count: 18 },
+          { id: 'c4', name: 'Poor maintenance', count: 10 },
+          { id: 'c5', name: 'Inadequate training', count: 7 },
+          { id: 'c6', name: 'Design flaw', count: 5 },
+          { id: 'c7', name: 'Environmental factors', count: 2 }
+        ]
+      }
+    ];
+
+    var activeDatasetKey = DATASETS[0].key;
+    var causes = DATASETS[0].causes.map(function(c){ return { id: c.id, name: c.name, count: c.count }; });
+
+    function deriveSorted() {
+      var sorted = causes.slice().sort(function(a, b){ return b.count - a.count; });
+      var total = sorted.reduce(function(sum, c){ return sum + c.count; }, 0);
+      var running = 0;
+      var vitalCount = 0;
+      var crossed = false;
+      var rows = sorted.map(function(c){
+        running += c.count;
+        var pct = total ? (c.count / total * 100) : 0;
+        var cumPct = total ? (running / total * 100) : 0;
+        if (!crossed) {
+          vitalCount++;
+          if (cumPct >= 80) crossed = true;
+        }
+        return { id: c.id, name: c.name, count: c.count, pct: pct, cumPct: cumPct };
+      });
+      rows.forEach(function(r, i){ r.vital = i < vitalCount; });
+      return { rows: rows, total: total, vitalCount: vitalCount };
+    }
+
+    function fmtPct(v) { return v.toFixed(1) + '%'; }
+
+    function readColors() {
+      var css = getComputedStyle(document.documentElement);
+      var v = function(name){ return css.getPropertyValue(name).trim(); };
+      return {
+        grid: v('--pm-chart-grid'),
+        axis: v('--pm-chart-axis'),
+        tooltipBg: v('--pm-chart-tooltip-bg'),
+        tooltipBd: v('--pm-chart-tooltip-bd'),
+        tooltipTx: v('--pm-chart-tooltip-tx'),
+        vital: v('--pm-amber-400'),
+        trivial: v('--pm-gray-400'),
+        cumLine: v('--pm-purple-400'),
+        threshold: v('--pm-red-400')
+      };
+    }
+
+    function buildChartConfig(colors, derived) {
+      var labels = derived.rows.map(function(r){ return r.name; });
+      var counts = derived.rows.map(function(r){ return r.count; });
+      var cum = derived.rows.map(function(r){ return r.cumPct; });
+      var barColors = derived.rows.map(function(r){ return r.vital ? colors.vital : colors.trivial; });
+      var maxCount = Math.max.apply(null, counts);
+
+      return {
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Frequency',
+              data: counts,
+              backgroundColor: barColors,
+              borderRadius: 4,
+              yAxisID: 'y',
+              order: 2
+            },
+            {
+              type: 'line',
+              label: 'Cumulative %',
+              data: cum,
+              borderColor: colors.cumLine,
+              backgroundColor: colors.cumLine,
+              borderWidth: 2,
+              pointRadius: 3,
+              tension: 0.2,
+              yAxisID: 'y1',
+              order: 1
+            },
+            {
+              type: 'line',
+              label: '80% threshold',
+              data: labels.map(function(){ return 80; }),
+              borderColor: colors.threshold,
+              borderWidth: 1.5,
+              borderDash: [6, 4],
+              pointRadius: 0,
+              yAxisID: 'y1',
+              order: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: colors.axis, font: { size: 11 }, boxWidth: 12 } },
+            tooltip: {
+              backgroundColor: colors.tooltipBg,
+              borderColor: colors.tooltipBd,
+              borderWidth: 1,
+              titleColor: colors.tooltipTx,
+              bodyColor: colors.tooltipTx,
+              padding: 8,
+              callbacks: {
+                label: function(ctx){
+                  if (ctx.dataset.label === 'Cumulative %' || ctx.dataset.label === '80% threshold') {
+                    return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
+                  }
+                  return ctx.dataset.label + ': ' + ctx.parsed.y;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: colors.axis, font: { size: 10 }, maxRotation: 40, minRotation: 0 } },
+            y: {
+              position: 'left',
+              suggestedMax: Math.ceil(maxCount * 1.15),
+              grid: { color: colors.grid },
+              ticks: { color: colors.axis, font: { size: 11 } },
+              title: { display: true, text: 'Frequency', color: colors.axis, font: { size: 11 } }
+            },
+            y1: {
+              position: 'right',
+              min: 0, max: 100,
+              grid: { drawOnChartArea: false },
+              ticks: { color: colors.axis, font: { size: 11 }, callback: function(v){ return v + '%'; } },
+              title: { display: true, text: 'Cumulative %', color: colors.axis, font: { size: 11 } }
+            }
+          }
+        }
+      };
+    }
+
+    var mainChart = null;
+
+    function renderKpis(derived) {
+      var el = document.getElementById('pc-kpi-row');
+      var vitalPct = derived.total ? (derived.rows.slice(0, derived.vitalCount).reduce(function(s, r){ return s + r.count; }, 0) / derived.total * 100) : 0;
+      var items = [
+        { label: 'Total issues', value: String(derived.total), cls: 'pm-kpi-info' },
+        { label: 'Vital few causes', value: derived.vitalCount + ' of ' + derived.rows.length, cls: 'pm-kpi-good' },
+        { label: '% of issues from vital few', value: fmtPct(vitalPct), cls: vitalPct >= 75 ? 'pm-kpi-good' : 'pm-kpi-warn' }
+      ];
+      el.innerHTML = items.map(function(it){
+        return '<div class="pm-kpi ' + it.cls + '" style="flex:1 1 150px">' +
+          '<div class="pc-kpi-label">' + it.label + '</div>' +
+          '<div class="pc-kpi-value">' + it.value + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderTable(derived) {
+      var tbody = document.getElementById('pc-table-body');
+      tbody.innerHTML = derived.rows.map(function(r){
+        return '<tr>' +
+          '<td class="pc-name">' + r.name + (r.vital ? ' <span class="pc-vital-dot" title="Vital few"></span>' : '') + '</td>' +
+          '<td class="pc-num">' + r.count + '</td>' +
+          '<td class="pc-num">' + fmtPct(r.pct) + '</td>' +
+          '<td class="pc-num">' + fmtPct(r.cumPct) + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function renderVitalChips(derived) {
+      var el = document.getElementById('pc-vital-row');
+      el.innerHTML = derived.rows.slice(0, derived.vitalCount).map(function(r){
+        return '<span class="pm-chip" style="background:var(--pm-mat-bg);color:var(--pm-mat-tx);border-color:var(--pm-mat-bd)">' + r.name + '</span>';
+      }).join('');
+    }
+
+    function renderSimSliders() {
+      var wrap = document.getElementById('pc-sim-sliders');
+      wrap.innerHTML = causes.map(function(c){
+        var maxVal = Math.max(50, c.count * 2);
+        return '<div class="pm-slider-row pc-slider-row" data-id="' + c.id + '">' +
+          '<span class="pc-sim-name">' + c.name + '</span>' +
+          '<input type="range" min="0" max="' + maxVal + '" step="1" value="' + c.count + '">' +
+          '<span class="pc-sim-val">' + c.count + '</span>' +
+          '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('.pc-slider-row').forEach(function(row){
+        var id = row.getAttribute('data-id');
+        var input = row.querySelector('input[type="range"]');
+        var valSpan = row.querySelector('.pc-sim-val');
+        input.addEventListener('input', function(){
+          var v = parseInt(input.value, 10);
+          valSpan.textContent = String(v);
+          var cause = causes.filter(function(c){ return c.id === id; })[0];
+          if (cause) cause.count = v;
+          refreshChartOnly();
+        });
+      });
+    }
+
+    function renderDatasetButtons() {
+      var wrap = document.getElementById('pc-dataset-buttons');
+      wrap.innerHTML = DATASETS.map(function(d){
+        var on = d.key === activeDatasetKey ? ' on' : '';
+        return '<button type="button" class="pc-dataset-btn' + on + '" data-key="' + d.key + '">' +
+          '<strong>' + d.name + '</strong><span>' + d.blurb + '</span>' +
+          '</button>';
+      }).join('');
+
+      wrap.querySelectorAll('.pc-dataset-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var key = btn.getAttribute('data-key');
+          var ds = DATASETS.filter(function(d){ return d.key === key; })[0];
+          if (!ds) return;
+          activeDatasetKey = key;
+          causes = ds.causes.map(function(c){ return { id: c.id, name: c.name, count: c.count }; });
+          renderDatasetButtons();
+          renderSimSliders();
+          refresh();
+          setActiveTab('chart');
+        });
+      });
+    }
+
+    function refreshChartOnly() {
+      var colors = readColors();
+      var derived = deriveSorted();
+      var ctx = document.getElementById('pc-chart-main').getContext('2d');
+      var config = buildChartConfig(colors, derived);
+      if (mainChart) { mainChart.destroy(); }
+      mainChart = new Chart(ctx, config);
+      renderKpis(derived);
+      renderTable(derived);
+      renderVitalChips(derived);
+    }
+
+    function refresh() {
+      refreshChartOnly();
+    }
+
+    function setActiveTab(target) {
+      document.querySelectorAll('[data-pc-tab]').forEach(function(b){
+        b.classList.toggle('on', b.getAttribute('data-pc-tab') === target);
+      });
+      document.querySelectorAll('[data-pc-panel]').forEach(function(panel){
+        panel.classList.toggle('on', panel.getAttribute('data-pc-panel') === target);
+      });
+      if (target === 'chart' && mainChart) mainChart.resize();
+    }
+
+    function setupTabs() {
+      document.querySelectorAll('[data-pc-tab]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          setActiveTab(btn.getAttribute('data-pc-tab'));
+        });
+      });
+    }
+
+    function init() {
+      setupTabs();
+      renderDatasetButtons();
+      renderSimSliders();
+      refresh();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      refresh();
+    });
+
+  })();
+  </script>
 </body>
 </html>

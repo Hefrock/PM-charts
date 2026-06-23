@@ -6,7 +6,6 @@
   <title>Risk matrix — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,162 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    /* Risk matrix widget */
+    .risk-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .risk-toolbar-hint { font-size: 11px; color: var(--pm-tx-tertiary); }
+    .risk-add-btn {
+      font-size: 11px; font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--pm-radius-pill);
+      border: 0.5px solid var(--pm-info-bd);
+      background: var(--pm-info-bg);
+      color: var(--pm-info-tx);
+      cursor: pointer;
+    }
+    .risk-add-btn:hover { filter: brightness(0.96); }
+
+    .risk-layout {
+      display: flex; gap: 18px; flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .risk-matrix-area {
+      display: flex;
+      gap: 6px;
+    }
+    .risk-yaxis-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-align: center;
+      font-size: 10px;
+      color: var(--pm-tx-tertiary);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      padding: 4px 0;
+    }
+    .risk-grid-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      grid-template-rows: repeat(5, 50px);
+      gap: 3px;
+      position: relative;
+      touch-action: none;
+    }
+    .risk-cell {
+      position: relative;
+      border-radius: var(--pm-radius-sm);
+      background: var(--pm-good-bg);
+      border: 1px solid var(--pm-border);
+    }
+    .risk-cell.band-amber { background: var(--pm-warn-bg); }
+    .risk-cell.band-red   { background: var(--pm-bad-bg); }
+    .risk-cell.band-deep  { background: var(--pm-bad-bg); border: 2.5px solid var(--pm-bad-bd); }
+    .risk-cell-score {
+      position: absolute; top: 2px; left: 4px;
+      font-size: 8px; color: var(--pm-tx-tertiary);
+    }
+    .risk-xaxis {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      gap: 3px;
+    }
+    .risk-xaxis span {
+      text-align: center; font-size: 9px; color: var(--pm-tx-tertiary);
+    }
+    .risk-xaxis-label {
+      text-align: center;
+      font-size: 10px;
+      color: var(--pm-tx-tertiary);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .risk-dot {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700;
+      color: #fff;
+      background: var(--pm-tools-bd);
+      border: 2px solid var(--pm-surface);
+      cursor: grab;
+      touch-action: none;
+      z-index: 5;
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
+      transition: box-shadow .15s;
+      user-select: none;
+    }
+    .risk-dot.is-dragging { cursor: grabbing; z-index: 9; }
+    .risk-dot.is-pulsing {
+      animation: risk-pulse 0.9s ease-in-out 2;
+    }
+    @keyframes risk-pulse {
+      0%, 100% { box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+      50% { box-shadow: 0 0 0 7px var(--pm-coral-400); }
+    }
+
+    .risk-panel {
+      flex: 1; min-width: 220px;
+      background: var(--pm-surface-sub);
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+      min-height: 90px;
+    }
+    .risk-panel strong { color: var(--pm-tx-primary); }
+    .risk-panel-strategy {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 10px;
+      border-radius: var(--pm-radius-pill);
+      font-size: 11px; font-weight: 600;
+    }
+    .risk-panel-strategy.band-green { background: var(--pm-good-bg); color: var(--pm-good-tx); }
+    .risk-panel-strategy.band-amber { background: var(--pm-warn-bg); color: var(--pm-warn-tx); }
+    .risk-panel-strategy.band-red   { background: var(--pm-bad-bg); color: var(--pm-bad-tx); }
+    .risk-panel-strategy.band-deep  { background: var(--pm-bad-bg); color: var(--pm-bad-tx); border: 1.5px solid var(--pm-bad-bd); }
+
+    .risk-table-wrap { margin-top: 18px; overflow-x: auto; }
+    table.risk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    table.risk-table th, table.risk-table td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 0.5px solid var(--pm-border);
+      white-space: nowrap;
+    }
+    table.risk-table th {
+      color: var(--pm-tx-tertiary);
+      font-weight: 500;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    table.risk-table tr.risk-row { cursor: pointer; }
+    table.risk-table tr.risk-row:hover { background: var(--pm-surface-sub); }
+    table.risk-table tr.risk-row.is-selected { background: var(--pm-info-bg); }
+    .risk-score-pill {
+      display: inline-block;
+      min-width: 22px; text-align: center;
+      padding: 1px 7px;
+      border-radius: var(--pm-radius-pill);
+      font-weight: 700;
+    }
+    .risk-score-pill.band-green { background: var(--pm-good-bg); color: var(--pm-good-tx); }
+    .risk-score-pill.band-amber { background: var(--pm-warn-bg); color: var(--pm-warn-tx); }
+    .risk-score-pill.band-red   { background: var(--pm-bad-bg); color: var(--pm-bad-tx); }
+    .risk-score-pill.band-deep  { background: var(--pm-bad-bg); color: var(--pm-bad-tx); border: 1.5px solid var(--pm-bad-bd); }
   </style>
 </head>
 <body>
@@ -26,20 +181,32 @@
     <h1 class="chart-title">Risk matrix</h1>
     <p class="chart-subtitle">Probability vs impact with live response strategies.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 04: Risk matrix<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="risk-toolbar">
+        <span class="risk-toolbar-hint">Drag a dot to re-score it. Click a dot or row for details.</span>
+        <button type="button" class="risk-add-btn" id="riskAddBtn">+ Add risk</button>
+      </div>
+
+      <div class="risk-layout">
+        <div class="risk-matrix-area">
+          <div class="risk-yaxis-label">Probability</div>
+          <div class="risk-grid-wrap">
+            <div class="risk-grid" id="riskGrid"></div>
+            <div class="risk-xaxis" id="riskXAxis"></div>
+            <div class="risk-xaxis-label">Impact</div>
+          </div>
         </div>
+
+        <div class="risk-panel" id="riskPanel">Click a dot to see its response strategy.</div>
+      </div>
+
+      <div class="risk-table-wrap">
+        <table class="risk-table">
+          <thead>
+            <tr><th>Risk</th><th>P</th><th>I</th><th>Score</th><th>Trend</th><th>Owner</th></tr>
+          </thead>
+          <tbody id="riskTableBody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -60,5 +227,246 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    var CELL = 50;
+    var GAP = 3;
+    var STEP = CELL + GAP;
+
+    var risks = [
+      { id:'r1', name:'Key developer attrition',     p:4, i:4, owner:'Sam',   trend:'up',   response:'Cross-train a backup contractor on critical modules before week 8.' },
+      { id:'r2', name:'Scope creep from sponsor',     p:3, i:3, owner:'Maya',  trend:'flat', response:'Enforce change-control board sign-off for any new requirement.' },
+      { id:'r3', name:'Vendor delivery delay',        p:4, i:3, owner:'Priya', trend:'up',   response:'Add a 2-week buffer and identify a secondary supplier.' },
+      { id:'r4', name:'Budget overrun',               p:2, i:4, owner:'Maya',  trend:'down', response:'Re-baseline monthly burn rate against approved budget.' },
+      { id:'r5', name:'Integration test failures',    p:3, i:2, owner:'Devon', trend:'flat', response:'Increase automated regression coverage before UAT.' },
+      { id:'r6', name:'Regulatory change',            p:1, i:5, owner:'Jon',   trend:'flat', response:'Monitor compliance bulletins monthly; no action needed now.' },
+      { id:'r7', name:'Stakeholder misalignment',     p:2, i:2, owner:'Maya',  trend:'down', response:'Maintain biweekly stakeholder sync to confirm priorities.' },
+      { id:'r8', name:'Data migration data loss',     p:2, i:5, owner:'Sam',   trend:'up',   response:'Run a full dry-run migration with rollback plan two weeks early.' },
+      { id:'r9', name:'Security vulnerability',       p:1, i:4, owner:'Devon', trend:'flat', response:'Schedule a penetration test before go-live.' }
+    ];
+
+    var selectedId = null;
+    var nextNum = risks.length + 1;
+
+    var gridEl = document.getElementById('riskGrid');
+    var xAxisEl = document.getElementById('riskXAxis');
+    var panelEl = document.getElementById('riskPanel');
+    var tableBodyEl = document.getElementById('riskTableBody');
+    var addBtn = document.getElementById('riskAddBtn');
+
+    function band(score){
+      if (score >= 16) return 'deep';
+      if (score >= 9) return 'red';
+      if (score >= 4) return 'amber';
+      return 'green';
+    }
+    function bandClass(score){ return 'band-' + band(score); }
+    function strategyText(score){
+      var b = band(score);
+      if (b === 'deep') return 'Immediate action';
+      if (b === 'red') return 'Escalate';
+      if (b === 'amber') return 'Assign an owner';
+      return 'Monitor passively';
+    }
+    function trendArrow(t){
+      if (t === 'up') return '↑';
+      if (t === 'down') return '↓';
+      return '→';
+    }
+
+    // Build the 5x5 grid. Row 0 = probability 5 (top) down to probability 1 (bottom).
+    function buildGrid(){
+      gridEl.innerHTML = '';
+      gridEl.style.position = 'relative';
+      for (var rowIdx = 0; rowIdx < 5; rowIdx++) {
+        var probability = 5 - rowIdx;
+        for (var colIdx = 0; colIdx < 5; colIdx++) {
+          var impact = colIdx + 1;
+          var score = probability * impact;
+          var cell = document.createElement('div');
+          cell.className = 'risk-cell ' + bandClass(score);
+          cell.dataset.p = probability;
+          cell.dataset.i = impact;
+          var lbl = document.createElement('span');
+          lbl.className = 'risk-cell-score';
+          lbl.textContent = score;
+          cell.appendChild(lbl);
+          gridEl.appendChild(cell);
+        }
+      }
+      var totalSize = STEP * 5 - GAP;
+      gridEl.style.width = totalSize + 'px';
+      gridEl.style.height = totalSize + 'px';
+
+      xAxisEl.innerHTML = '';
+      for (var c = 1; c <= 5; c++) {
+        var s = document.createElement('span');
+        s.textContent = c;
+        xAxisEl.appendChild(s);
+      }
+    }
+
+    function cellCenter(p, i){
+      var col = i - 1;
+      var row = 5 - p;
+      return {
+        x: col * STEP + CELL / 2,
+        y: row * STEP + CELL / 2
+      };
+    }
+
+    function initials(name){
+      return name.split(' ').map(function(w){ return w[0]; }).join('').slice(0, 3).toUpperCase();
+    }
+
+    var dotEls = {};
+
+    function renderDots(){
+      Object.keys(dotEls).forEach(function(id){
+        if (!risks.some(function(r){ return r.id === id; })) {
+          dotEls[id].remove();
+          delete dotEls[id];
+        }
+      });
+      risks.forEach(function(r){
+        var dot = dotEls[r.id];
+        if (!dot) {
+          dot = document.createElement('div');
+          dot.className = 'risk-dot';
+          dot.dataset.id = r.id;
+          dot.style.touchAction = 'none';
+          attachDrag(dot, r);
+          dot.addEventListener('click', function(ev){
+            ev.stopPropagation();
+            selectRisk(r.id);
+          });
+          gridEl.appendChild(dot);
+          dotEls[r.id] = dot;
+        }
+        dot.textContent = initials(r.name);
+        dot.title = r.name;
+        var pos = cellCenter(r.p, r.i);
+        dot.style.left = pos.x + 'px';
+        dot.style.top = pos.y + 'px';
+        var score = r.p * r.i;
+        var b = band(score);
+        if (b === 'deep' || b === 'red') {
+          dot.style.background = 'var(--pm-bad-bd)';
+        } else if (b === 'amber') {
+          dot.style.background = 'var(--pm-warn-bd)';
+        } else {
+          dot.style.background = 'var(--pm-good-bd)';
+        }
+      });
+    }
+
+    function attachDrag(dot, risk){
+      var dragState = null;
+
+      dot.addEventListener('pointerdown', function(ev){
+        dot.setPointerCapture(ev.pointerId);
+        dot.classList.add('is-dragging');
+        var gridRect = gridEl.getBoundingClientRect();
+        dragState = { gridRect: gridRect };
+        selectRisk(risk.id);
+        ev.preventDefault();
+      });
+
+      dot.addEventListener('pointermove', function(ev){
+        if (!dragState) return;
+        var x = ev.clientX - dragState.gridRect.left;
+        var y = ev.clientY - dragState.gridRect.top;
+        var maxPos = STEP * 5 - GAP;
+        x = Math.max(0, Math.min(maxPos, x));
+        y = Math.max(0, Math.min(maxPos, y));
+        dot.style.left = x + 'px';
+        dot.style.top = y + 'px';
+      });
+
+      function finishDrag(ev){
+        if (!dragState) return;
+        var x = parseFloat(dot.style.left);
+        var y = parseFloat(dot.style.top);
+        var col = Math.max(0, Math.min(4, Math.round((x - CELL / 2) / STEP)));
+        var row = Math.max(0, Math.min(4, Math.round((y - CELL / 2) / STEP)));
+        var impact = col + 1;
+        var probability = 5 - row;
+        risk.p = probability;
+        risk.i = impact;
+        dragState = null;
+        dot.classList.remove('is-dragging');
+        renderDots();
+        renderTable();
+        if (selectedId === risk.id) selectRisk(risk.id);
+      }
+
+      dot.addEventListener('pointerup', finishDrag);
+      dot.addEventListener('pointercancel', finishDrag);
+    }
+
+    function selectRisk(id){
+      selectedId = id;
+      var r = risks.filter(function(x){ return x.id === id; })[0];
+      if (!r) return;
+      var score = r.p * r.i;
+      var b = band(score);
+      panelEl.innerHTML = '<strong>' + escapeHtml(r.name) + '</strong> &middot; Owner: ' + escapeHtml(r.owner) +
+        '<br>Probability ' + r.p + ' &times; Impact ' + r.i + ' = Score ' + score +
+        '<br><span class="risk-panel-strategy band-' + b + '">' + strategyText(score) + '</span>' +
+        '<div style="margin-top:8px;color:var(--pm-tx-secondary)">' + escapeHtml(r.response) + '</div>';
+
+      Object.keys(dotEls).forEach(function(rid){
+        dotEls[rid].classList.toggle('is-pulsing', rid === id);
+      });
+      // restart animation reliably
+      var activeDot = dotEls[id];
+      if (activeDot) {
+        activeDot.classList.remove('is-pulsing');
+        void activeDot.offsetWidth;
+        activeDot.classList.add('is-pulsing');
+      }
+      renderTable();
+    }
+
+    function renderTable(){
+      var sorted = risks.slice().sort(function(a, b){ return (b.p * b.i) - (a.p * a.i); });
+      tableBodyEl.innerHTML = '';
+      sorted.forEach(function(r){
+        var score = r.p * r.i;
+        var tr = document.createElement('tr');
+        tr.className = 'risk-row' + (r.id === selectedId ? ' is-selected' : '');
+        tr.dataset.id = r.id;
+        tr.innerHTML = '<td>' + escapeHtml(r.name) + '</td>' +
+          '<td>' + r.p + '</td>' +
+          '<td>' + r.i + '</td>' +
+          '<td><span class="risk-score-pill ' + bandClass(score) + '">' + score + '</span></td>' +
+          '<td>' + trendArrow(r.trend) + '</td>' +
+          '<td>' + escapeHtml(r.owner) + '</td>';
+        tr.addEventListener('click', function(){ selectRisk(r.id); });
+        tableBodyEl.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(str){
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    addBtn.addEventListener('click', function(){
+      var id = 'r' + (nextNum++);
+      var newRisk = { id:id, name:'New risk ' + (nextNum - 1), p:3, i:3, owner:'Unassigned', trend:'flat', response:'Define a response plan and assign an owner.' };
+      risks.push(newRisk);
+      renderDots();
+      renderTable();
+      selectRisk(id);
+    });
+
+    buildGrid();
+    renderDots();
+    renderTable();
+  })();
+  </script>
 </body>
 </html>

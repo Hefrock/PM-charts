@@ -6,7 +6,6 @@
   <title>Tornado diagram — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,98 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    .td-kpi-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .td-kpi-row .pm-kpi { flex: 1 1 200px; }
+    .td-kpi-label { font-size: 10px; color: var(--pm-tx-tertiary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+    .td-kpi-value { font-size: 16px; font-weight: 600; }
+
+    .td-chart {
+      position: relative;
+      padding: 4px 0 0;
+    }
+    .td-center-line {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: var(--pm-process-bd);
+      z-index: 1;
+    }
+    .td-center-label {
+      position: absolute;
+      top: -2px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--pm-process-tx);
+      background: var(--pm-process-bg);
+      padding: 1px 7px;
+      border-radius: var(--pm-radius-pill);
+      white-space: nowrap;
+      z-index: 3;
+    }
+
+    .td-rows { padding-top: 22px; }
+    .td-row { margin-bottom: 16px; }
+    .td-row-label {
+      font-size: 11px; font-weight: 500;
+      color: var(--pm-tx-primary);
+      margin-bottom: 4px;
+      display: flex; justify-content: space-between; gap: 8px;
+    }
+    .td-row-label span.td-range { color: var(--pm-tx-tertiary); font-weight: 400; font-size: 10px; }
+
+    .td-bar-track {
+      position: relative;
+      height: 26px;
+    }
+    .td-bar {
+      position: absolute;
+      top: 0; height: 26px;
+      border-radius: var(--pm-radius-sm);
+      box-sizing: border-box;
+    }
+    .td-bar-down {
+      right: 50%;
+      background: var(--pm-bad-bg);
+      border: 1.5px solid var(--pm-bad-bd);
+      border-right: none;
+      border-radius: var(--pm-radius-sm) 0 0 var(--pm-radius-sm);
+    }
+    .td-bar-up {
+      left: 50%;
+      background: var(--pm-good-bg);
+      border: 1.5px solid var(--pm-good-bd);
+      border-left: none;
+      border-radius: 0 var(--pm-radius-sm) var(--pm-radius-sm) 0;
+    }
+    .td-bar-value {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      font-size: 10px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .td-bar-down .td-bar-value { right: 100%; margin-right: 6px; color: var(--pm-bad-tx); }
+    .td-bar-up .td-bar-value { left: 100%; margin-left: 6px; color: var(--pm-good-tx); }
+
+    .td-handle {
+      position: absolute;
+      top: 50%;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: ew-resize;
+      box-sizing: border-box;
+      z-index: 2;
+      touch-action: none;
+    }
+    .td-handle-down { background: var(--pm-bad-bd); border: 2px solid var(--pm-surface); }
+    .td-handle-up { background: var(--pm-good-bd); border: 2px solid var(--pm-surface); }
+
+    .td-legend { display: flex; gap: 16px; margin-top: 4px; font-size: 11px; color: var(--pm-tx-secondary); }
+    .td-legend-item { display: flex; align-items: center; gap: 5px; }
+    .td-legend-swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
   </style>
 </head>
 <body>
@@ -26,20 +117,27 @@
     <h1 class="chart-title">Tornado diagram</h1>
     <p class="chart-subtitle">Risk impact ranked for budget conversations.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 12: Tornado diagram<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="td-kpi-row">
+        <div class="pm-kpi pm-kpi-bad" id="tdContingencyKpi">
+          <div class="td-kpi-label">Total contingency requirement</div>
+          <div class="td-kpi-value" id="tdContingencyValue">$0k</div>
         </div>
+        <div class="pm-kpi pm-kpi-info" id="tdExposureKpi">
+          <div class="td-kpi-label">Total swing (down + up)</div>
+          <div class="td-kpi-value" id="tdExposureValue">$0k</div>
+        </div>
+      </div>
+
+      <div class="td-legend">
+        <span class="td-legend-item"><span class="td-legend-swatch" style="background:var(--pm-bad-bd)"></span>Downside (cost overrun)</span>
+        <span class="td-legend-item"><span class="td-legend-swatch" style="background:var(--pm-good-bd)"></span>Upside (saving)</span>
+      </div>
+
+      <div class="td-chart">
+        <div class="td-center-line"></div>
+        <div class="td-center-label">Base estimate</div>
+        <div class="td-rows" id="tdRows"></div>
       </div>
     </div>
 
@@ -60,5 +158,188 @@
     </div>
 
   </div>
+  <script>
+  (function(){
+    // ── Risk data: down/up are $k magnitudes from base estimate ──
+    var RISKS = [
+      { id:'r1', name:'Vendor price escalation',      down:180, up:40  },
+      { id:'r2', name:'Scope creep (change requests)',down:140, up:20  },
+      { id:'r3', name:'Key resource attrition',       down:95,  up:10  },
+      { id:'r4', name:'FX rate movement',              down:60,  up:70  },
+      { id:'r5', name:'Regulatory delay',              down:110, up:15  },
+      { id:'r6', name:'Early vendor discount captured', down:30,  up:55  },
+      { id:'r7', name:'Integration rework',             down:75,  up:25  }
+    ];
+
+    var MAX_MAGNITUDE = 220; // $k — caps slider/drag range for both sides
+    var MIN_MAGNITUDE = 5;
+
+    var rowsEl = document.getElementById('tdRows');
+    var contingencyValue = document.getElementById('tdContingencyValue');
+    var exposureValue = document.getElementById('tdExposureValue');
+
+    function fmtK(v){ return '$' + Math.round(v) + 'k'; }
+
+    function totalRange(r){ return r.down + r.up; }
+
+    function sortedRisks(){
+      return RISKS.slice().sort(function(a, b){ return totalRange(b) - totalRange(a); });
+    }
+
+    function updateKpis(){
+      var contingency = RISKS.reduce(function(sum, r){ return sum + r.down; }, 0);
+      var exposure = RISKS.reduce(function(sum, r){ return sum + totalRange(r); }, 0);
+      contingencyValue.textContent = fmtK(contingency);
+      exposureValue.textContent = fmtK(exposure);
+    }
+
+    function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+    function render(){
+      var order = sortedRisks();
+      var maxRange = Math.max.apply(null, order.map(totalRange));
+
+      rowsEl.innerHTML = '';
+      order.forEach(function(r){
+        var row = document.createElement('div');
+        row.className = 'td-row';
+
+        var label = document.createElement('div');
+        label.className = 'td-row-label';
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = r.name;
+        var rangeSpan = document.createElement('span');
+        rangeSpan.className = 'td-range';
+        rangeSpan.textContent = 'Range: ' + fmtK(totalRange(r));
+        label.appendChild(nameSpan);
+        label.appendChild(rangeSpan);
+
+        var track = document.createElement('div');
+        track.className = 'td-bar-track';
+
+        // Scale each side's pixel width relative to the widest total range, as a % of half-track.
+        var downPct = (r.down / maxRange) * 50;
+        var upPct = (r.up / maxRange) * 50;
+
+        var barDown = document.createElement('div');
+        barDown.className = 'td-bar td-bar-down';
+        barDown.style.width = downPct + '%';
+        var downVal = document.createElement('span');
+        downVal.className = 'td-bar-value';
+        downVal.textContent = '-' + fmtK(r.down);
+        barDown.appendChild(downVal);
+
+        var barUp = document.createElement('div');
+        barUp.className = 'td-bar td-bar-up';
+        barUp.style.width = upPct + '%';
+        var upVal = document.createElement('span');
+        upVal.className = 'td-bar-value';
+        upVal.textContent = '+' + fmtK(r.up);
+        barUp.appendChild(upVal);
+
+        var handleDown = document.createElement('div');
+        handleDown.className = 'td-handle td-handle-down';
+        handleDown.style.left = (50 - downPct) + '%';
+        handleDown.setAttribute('role', 'slider');
+        handleDown.setAttribute('tabindex', '0');
+        handleDown.setAttribute('aria-label', 'Downside magnitude for ' + r.name);
+
+        var handleUp = document.createElement('div');
+        handleUp.className = 'td-handle td-handle-up';
+        handleUp.style.left = (50 + upPct) + '%';
+        handleUp.setAttribute('role', 'slider');
+        handleUp.setAttribute('tabindex', '0');
+        handleUp.setAttribute('aria-label', 'Upside magnitude for ' + r.name);
+
+        track.appendChild(barDown);
+        track.appendChild(barUp);
+        track.appendChild(handleDown);
+        track.appendChild(handleUp);
+
+        row.appendChild(label);
+        row.appendChild(track);
+        rowsEl.appendChild(row);
+
+        attachDrag(handleDown, barDown, downVal, track, r, 'down');
+        attachDrag(handleUp, barUp, upVal, track, r, 'up');
+
+        // Keyboard support: arrow keys nudge by 5k
+        handleDown.addEventListener('keydown', function(e){ keyboardNudge(e, r, 'down'); });
+        handleUp.addEventListener('keydown', function(e){ keyboardNudge(e, r, 'up'); });
+      });
+
+      updateKpis();
+    }
+
+    function keyboardNudge(e, risk, side){
+      var step = 5;
+      if (e.key === 'ArrowLeft') {
+        risk[side] = clamp(risk[side] - step, MIN_MAGNITUDE, MAX_MAGNITUDE);
+        e.preventDefault();
+        render();
+      } else if (e.key === 'ArrowRight') {
+        risk[side] = clamp(risk[side] + step, MIN_MAGNITUDE, MAX_MAGNITUDE);
+        e.preventDefault();
+        render();
+      }
+    }
+
+    // During an active drag we mutate styles directly (cheap) instead of calling
+    // render(), because render() rebuilds the row DOM (and re-sorts) which would
+    // detach the very handle element that owns the pointer capture mid-drag.
+    // The full render()+re-sort happens once on pointerup.
+    function attachDrag(handle, bar, valueLabel, track, risk, side){
+      var dragging = false;
+
+      function onPointerDown(e){
+        dragging = true;
+        handle.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      }
+
+      function onPointerMove(e){
+        if (!dragging) return;
+        var rect = track.getBoundingClientRect();
+        var halfWidth = rect.width / 2;
+        var centerX = rect.left + halfWidth;
+        var dx;
+        if (side === 'down') {
+          dx = centerX - e.clientX; // distance to the left of center
+        } else {
+          dx = e.clientX - centerX; // distance to the right of center
+        }
+        var pct = clamp(dx / halfWidth, 0, 1);
+        // Convert pct-of-half-track back into a $k magnitude, relative to the
+        // current max range so the dragged bar can become the new widest bar.
+        var currentMax = Math.max.apply(null, RISKS.map(totalRange));
+        var magnitude = clamp(pct * currentMax, MIN_MAGNITUDE, MAX_MAGNITUDE);
+        risk[side] = Math.round(magnitude);
+
+        // Live-update this bar/handle only — defer full re-sort to pointerup.
+        var livePct = (risk[side] / currentMax) * 50;
+        bar.style.width = livePct + '%';
+        handle.style.left = (side === 'down' ? (50 - livePct) : (50 + livePct)) + '%';
+        valueLabel.textContent = (side === 'down' ? '-' : '+') + fmtK(risk[side]);
+        updateKpis();
+      }
+
+      function onPointerUp(e){
+        if (!dragging) return;
+        dragging = false;
+        if (handle.hasPointerCapture && handle.hasPointerCapture(e.pointerId)) {
+          handle.releasePointerCapture(e.pointerId);
+        }
+        render();
+      }
+
+      handle.addEventListener('pointerdown', onPointerDown);
+      handle.addEventListener('pointermove', onPointerMove);
+      handle.addEventListener('pointerup', onPointerUp);
+      handle.addEventListener('pointercancel', onPointerUp);
+    }
+
+    render();
+  })();
+  </script>
 </body>
 </html>

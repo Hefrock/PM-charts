@@ -6,7 +6,6 @@
   <title>RACI matrix — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,107 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    .raci-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+
+    .raci-pane { display:none; }
+    .raci-pane.on { display:block; }
+
+    .raci-table-scroll { overflow-x:auto; }
+    table.raci-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 560px;
+      font-size: 12px;
+    }
+    table.raci-table th, table.raci-table td {
+      border: 0.5px solid var(--pm-border);
+      padding: 0;
+      text-align: center;
+    }
+    table.raci-table thead th {
+      background: var(--pm-surface-sub);
+      color: var(--pm-tx-secondary);
+      font-weight: 500;
+      padding: 8px 6px;
+      white-space: nowrap;
+    }
+    table.raci-table thead th:first-child {
+      text-align: left;
+      min-width: 190px;
+    }
+    table.raci-table tbody td.raci-task-cell {
+      text-align: left;
+      padding: 7px 10px;
+      color: var(--pm-tx-primary);
+      white-space: nowrap;
+    }
+    tr.raci-phase-row td {
+      background: var(--pm-surface-sub);
+      color: var(--pm-tx-secondary);
+      font-weight: 600;
+      text-align: left;
+      padding: 6px 10px;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      font-size: 10.5px;
+    }
+    tr.raci-issue-row td.raci-task-cell {
+      box-shadow: inset 3px 0 0 var(--pm-bad-bd);
+    }
+
+    .raci-cell-btn {
+      width: 100%;
+      height: 34px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--pm-tx-tertiary);
+      transition: background .12s, color .12s;
+    }
+    .raci-cell-btn:hover { background: var(--pm-surface-sub); }
+    .raci-cell-btn.raci-R { background: var(--pm-tools-bg); color: var(--pm-tools-tx); }
+    .raci-cell-btn.raci-A { background: var(--pm-people-bg); color: var(--pm-people-tx); }
+    .raci-cell-btn.raci-C { background: var(--pm-mat-bg); color: var(--pm-mat-tx); }
+    .raci-cell-btn.raci-I { background: var(--pm-meas-bg); color: var(--pm-meas-tx); }
+
+    .raci-legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:11px; color:var(--pm-tx-secondary); }
+    .raci-legend span.sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+
+    .raci-kpi-row { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .raci-kpi-row .pm-kpi { flex:1; min-width:120px; }
+    .raci-kpi-row .pm-kpi .num { font-size:20px; font-weight:600; display:block; }
+    .raci-kpi-row .pm-kpi .lbl { font-size:11px; }
+
+    .raci-issue-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+    .raci-issue-list li {
+      background: var(--pm-bad-bg);
+      border-left: 3px solid var(--pm-bad-bd);
+      color: var(--pm-bad-tx);
+      border-radius: var(--pm-radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .raci-issue-list li strong { font-weight: 600; }
+
+    .raci-template-btns { display:flex; gap:10px; flex-wrap:wrap; }
+    .raci-template-card {
+      flex: 1;
+      min-width: 200px;
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      padding: 14px;
+      background: var(--pm-surface-sub);
+      cursor: pointer;
+      transition: border-color .12s;
+    }
+    .raci-template-card:hover { border-color: var(--pm-coral-400); }
+    .raci-template-card.active { border-color: var(--pm-coral-400); box-shadow: 0 0 0 1px var(--pm-coral-400) inset; }
+    .raci-template-card h4 { margin:0 0 4px; font-size:13px; font-weight:600; color:var(--pm-tx-primary); }
+    .raci-template-card p { margin:0; font-size:11.5px; color:var(--pm-tx-secondary); line-height:1.5; }
   </style>
 </head>
 <body>
@@ -26,19 +126,32 @@
     <h1 class="chart-title">RACI matrix</h1>
     <p class="chart-subtitle">Accountability without confusion across all tasks.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 08: RACI matrix<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="raci-tabs" role="tablist" aria-label="RACI views">
+        <button type="button" class="pm-tab-btn on" data-raci-tab="matrix">Matrix</button>
+        <button type="button" class="pm-tab-btn" data-raci-tab="health">Health check</button>
+        <button type="button" class="pm-tab-btn" data-raci-tab="templates">Templates</button>
+      </div>
+
+      <!-- Matrix -->
+      <div class="raci-pane on" data-raci-pane="matrix">
+        <div class="raci-table-scroll">
+          <table class="raci-table" id="raciTable" aria-label="RACI matrix grid"></table>
+        </div>
+        <div class="raci-legend" id="raciLegend"></div>
+      </div>
+
+      <!-- Health check -->
+      <div class="raci-pane" data-raci-pane="health">
+        <div class="raci-kpi-row" id="raciKpiRow"></div>
+        <ul class="raci-issue-list" id="raciIssueList"></ul>
+      </div>
+
+      <!-- Templates -->
+      <div class="raci-pane" data-raci-pane="templates">
+        <div class="raci-template-btns" id="raciTemplateBtns"></div>
+        <div class="pm-insight" style="background:var(--pm-info-bg);border:0.5px solid var(--pm-info-bd);color:var(--pm-info-tx)">
+          Switching a template replaces the matrix data live — your manual edits on the current preset will be lost. The Health check updates automatically against whichever preset is active.
         </div>
       </div>
     </div>
@@ -60,5 +173,273 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var ROLES = ['PM', 'Sponsor', 'Dev Lead', 'QA', 'Ops'];
+    var LETTER_CYCLE = ['R', 'A', 'C', 'I', ''];
+
+    var TEMPLATES = {
+      delivery: {
+        label: 'Standard delivery',
+        desc: 'Generic project lifecycle from initiation through closeout.',
+        roles: ['PM', 'Sponsor', 'Dev Lead', 'QA', 'Ops'],
+        phases: [
+          { name: 'Initiation', tasks: [
+            { task: 'Draft project charter', raci: ['A', 'R', 'C', '', ''] },
+            { task: 'Identify stakeholders', raci: ['R', 'C', 'C', '', ''] },
+            { task: 'Secure budget approval', raci: ['C', 'A', '', '', ''] }
+          ]},
+          { name: 'Planning', tasks: [
+            { task: 'Build work breakdown structure', raci: ['A', 'I', 'R', 'C', ''] },
+            { task: 'Define acceptance criteria', raci: ['C', 'I', 'R', 'A', ''] },
+            { task: 'Risk register set-up', raci: ['A', 'C', 'R', '', 'C'] },
+            { task: 'Resource & capacity plan', raci: ['R', 'I', 'C', '', 'A'] }
+          ]},
+          { name: 'Execution', tasks: [
+            { task: 'Sprint / iteration delivery', raci: ['C', 'I', 'A', 'C', 'I'] },
+            { task: 'Code review & merge gate', raci: ['I', '', 'A', 'C', ''] },
+            { task: 'Integration testing', raci: ['I', '', 'C', 'A', 'R'] },
+            { task: 'Stakeholder status reporting', raci: ['A', 'I', 'C', '', ''] }
+          ]},
+          { name: 'Closeout', tasks: [
+            { task: 'UAT sign-off', raci: ['C', 'A', 'I', 'R', ''] },
+            { task: 'Production cutover', raci: ['I', 'I', 'C', 'C', 'A'] },
+            { task: 'Lessons learned retro', raci: ['A', 'I', 'R', 'R', 'I'] }
+          ]}
+        ]
+      },
+      software: {
+        label: 'Software release',
+        desc: 'Release-train flavoured task list with the same five roles.',
+        roles: ['PM', 'Sponsor', 'Dev Lead', 'QA', 'Ops'],
+        phases: [
+          { name: 'Initiation', tasks: [
+            { task: 'Define release scope', raci: ['A', 'C', 'R', '', ''] },
+            { task: 'Go/no-go criteria agreed', raci: ['R', 'A', 'C', 'C', ''] }
+          ]},
+          { name: 'Planning', tasks: [
+            { task: 'Feature freeze date set', raci: ['A', 'I', 'R', 'C', ''] },
+            { task: 'Test plan drafted', raci: ['I', '', 'C', 'A', ''] },
+            { task: 'Rollback plan drafted', raci: ['C', '', 'C', 'C', 'A'] }
+          ]},
+          { name: 'Execution', tasks: [
+            { task: 'Feature branches merged', raci: ['I', '', 'A', 'C', ''] },
+            { task: 'Regression test pass', raci: ['I', '', 'C', 'A', 'C'] },
+            { task: 'Performance / load test', raci: ['I', '', 'C', 'A', 'R'] },
+            { task: 'Release notes published', raci: ['A', '', 'R', 'C', ''] }
+          ]},
+          { name: 'Closeout', tasks: [
+            { task: 'Production deployment', raci: ['I', 'I', 'C', 'C', 'A'] },
+            { task: 'Post-release monitoring', raci: ['I', '', 'C', 'C', 'A'] },
+            { task: 'Release retro', raci: ['A', 'I', 'R', 'R', 'C'] }
+          ]}
+        ]
+      },
+      marketing: {
+        label: 'Marketing campaign',
+        desc: 'Campaign launch task list mapped onto the same role columns.',
+        roles: ['PM', 'Sponsor', 'Dev Lead', 'QA', 'Ops'],
+        phases: [
+          { name: 'Initiation', tasks: [
+            { task: 'Campaign brief approved', raci: ['R', 'A', 'C', '', ''] },
+            { task: 'Budget & channel mix set', raci: ['A', 'C', '', '', 'C'] }
+          ]},
+          { name: 'Planning', tasks: [
+            { task: 'Creative concept sign-off', raci: ['C', 'A', 'R', '', ''] },
+            { task: 'Landing page build plan', raci: ['A', 'I', 'R', 'C', ''] },
+            { task: 'Compliance / legal review', raci: ['C', '', 'I', 'A', ''] }
+          ]},
+          { name: 'Execution', tasks: [
+            { task: 'Asset production', raci: ['I', '', 'A', 'C', ''] },
+            { task: 'QA of tracking & links', raci: ['I', '', 'C', 'A', 'C'] },
+            { task: 'Campaign goes live', raci: ['A', 'I', 'C', 'C', 'R'] }
+          ]},
+          { name: 'Closeout', tasks: [
+            { task: 'Performance report to sponsor', raci: ['A', 'R', '', '', ''] },
+            { task: 'Spend reconciliation', raci: ['C', 'I', '', '', 'A'] },
+            { task: 'Campaign retro', raci: ['A', 'I', 'R', 'R', 'I'] }
+          ]}
+        ]
+      }
+    };
+
+    var state = {
+      templateKey: 'delivery',
+      roles: TEMPLATES.delivery.roles.slice(),
+      phases: cloneDeep(TEMPLATES.delivery.phases)
+    };
+
+    function cloneDeep(phases) {
+      return phases.map(function(p){
+        return {
+          name: p.name,
+          tasks: p.tasks.map(function(t){
+            return { task: t.task, raci: t.raci.slice() };
+          })
+        };
+      });
+    }
+
+    var root = document.currentScript.closest('.chart-wrap');
+    var tableEl = root.querySelector('#raciTable');
+    var legendEl = root.querySelector('#raciLegend');
+    var kpiRowEl = root.querySelector('#raciKpiRow');
+    var issueListEl = root.querySelector('#raciIssueList');
+    var templateBtnsEl = root.querySelector('#raciTemplateBtns');
+    var tabBtns = root.querySelectorAll('[data-raci-tab]');
+    var panes = root.querySelectorAll('[data-raci-pane]');
+
+    function letterClass(letter) {
+      return letter ? ('raci-cell-btn raci-' + letter) : 'raci-cell-btn';
+    }
+
+    function renderLegend() {
+      var items = [
+        { l: 'R', name: 'Responsible', token: '--pm-tools-tx', sw: '--pm-tools-bd' },
+        { l: 'A', name: 'Accountable', token: '--pm-people-tx', sw: '--pm-people-bd' },
+        { l: 'C', name: 'Consulted', token: '--pm-mat-tx', sw: '--pm-mat-bd' },
+        { l: 'I', name: 'Informed', token: '--pm-meas-tx', sw: '--pm-meas-bd' }
+      ];
+      legendEl.innerHTML = items.map(function(it){
+        return '<span><span class="sw" style="background:var(' + it.sw + ')"></span>' + it.l + ' — ' + it.name + '</span>';
+      }).join('');
+    }
+
+    function renderTable() {
+      var html = '<thead><tr><th>Task</th>';
+      state.roles.forEach(function(role){
+        html += '<th>' + escapeHtml(role) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      var issues = computeIssues();
+      var issueRowKeys = {};
+      issues.forEach(function(iss){ issueRowKeys[iss.phaseIdx + ':' + iss.taskIdx] = true; });
+
+      state.phases.forEach(function(phase, phaseIdx){
+        html += '<tr class="raci-phase-row"><td colspan="' + (state.roles.length + 1) + '">' + escapeHtml(phase.name) + '</td></tr>';
+        phase.tasks.forEach(function(t, taskIdx){
+          var rowFlagged = issueRowKeys[phaseIdx + ':' + taskIdx];
+          html += '<tr' + (rowFlagged ? ' class="raci-issue-row"' : '') + '>';
+          html += '<td class="raci-task-cell">' + escapeHtml(t.task) + '</td>';
+          t.raci.forEach(function(letter, roleIdx){
+            html += '<td><button type="button" class="' + letterClass(letter) + '" '
+              + 'data-phase="' + phaseIdx + '" data-task="' + taskIdx + '" data-role="' + roleIdx + '" '
+              + 'aria-label="' + escapeHtml(t.task) + ' — ' + escapeHtml(state.roles[roleIdx]) + ': ' + (letter || 'blank') + '">'
+              + (letter || '&middot;') + '</button></td>';
+          });
+          html += '</tr>';
+        });
+      });
+
+      html += '</tbody>';
+      tableEl.innerHTML = html;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function(c){
+        return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+      });
+    }
+
+    function computeIssues() {
+      var issues = [];
+      state.phases.forEach(function(phase, phaseIdx){
+        phase.tasks.forEach(function(t, taskIdx){
+          var aCount = t.raci.filter(function(l){ return l === 'A'; }).length;
+          var rCount = t.raci.filter(function(l){ return l === 'R'; }).length;
+          if (aCount === 0) {
+            issues.push({ phaseIdx: phaseIdx, taskIdx: taskIdx, phase: phase.name, task: t.task,
+              problem: 'No Accountable owner — nobody is on the hook for this task.' });
+          } else if (aCount > 1) {
+            issues.push({ phaseIdx: phaseIdx, taskIdx: taskIdx, phase: phase.name, task: t.task,
+              problem: 'Multiple Accountable owners (' + aCount + ') — accountability is diluted.' });
+          }
+          if (rCount === 0) {
+            issues.push({ phaseIdx: phaseIdx, taskIdx: taskIdx, phase: phase.name, task: t.task,
+              problem: 'No Responsible doer — nobody is assigned to actually do the work.' });
+          }
+        });
+      });
+      return issues;
+    }
+
+    function renderHealth() {
+      var issues = computeIssues();
+      var totalTasks = state.phases.reduce(function(sum, p){ return sum + p.tasks.length; }, 0);
+      var cleanTasks = totalTasks - new Set(issues.map(function(i){ return i.phaseIdx + ':' + i.taskIdx; })).size;
+
+      var kpiClass = issues.length === 0 ? 'pm-kpi-good' : (issues.length <= 2 ? 'pm-kpi-warn' : 'pm-kpi-bad');
+      kpiRowEl.innerHTML =
+        '<div class="pm-kpi ' + kpiClass + '"><span class="num">' + issues.length + '</span><span class="lbl">issues found</span></div>' +
+        '<div class="pm-kpi pm-kpi-info"><span class="num">' + totalTasks + '</span><span class="lbl">total tasks</span></div>' +
+        '<div class="pm-kpi pm-kpi-good"><span class="num">' + cleanTasks + '</span><span class="lbl">clean rows</span></div>';
+
+      if (issues.length === 0) {
+        issueListEl.innerHTML = '<li style="background:var(--pm-good-bg);border-left-color:var(--pm-good-bd);color:var(--pm-good-tx)">'
+          + 'No violations found — every task has exactly one Accountable owner and at least one Responsible doer.</li>';
+        return;
+      }
+
+      issueListEl.innerHTML = issues.map(function(iss){
+        return '<li><strong>' + escapeHtml(iss.phase) + ' — ' + escapeHtml(iss.task) + ':</strong> ' + escapeHtml(iss.problem) + '</li>';
+      }).join('');
+    }
+
+    function renderTemplates() {
+      templateBtnsEl.innerHTML = Object.keys(TEMPLATES).map(function(key){
+        var t = TEMPLATES[key];
+        var active = key === state.templateKey;
+        return '<div class="raci-template-card' + (active ? ' active' : '') + '" data-template="' + key + '">'
+          + '<h4>' + escapeHtml(t.label) + (active ? ' (active)' : '') + '</h4>'
+          + '<p>' + escapeHtml(t.desc) + '</p></div>';
+      }).join('');
+    }
+
+    function renderAll() {
+      renderTable();
+      renderLegend();
+      renderHealth();
+      renderTemplates();
+    }
+
+    tableEl.addEventListener('click', function(e){
+      var btn = e.target.closest('.raci-cell-btn');
+      if (!btn) return;
+      var phaseIdx = +btn.getAttribute('data-phase');
+      var taskIdx = +btn.getAttribute('data-task');
+      var roleIdx = +btn.getAttribute('data-role');
+      var cur = state.phases[phaseIdx].tasks[taskIdx].raci[roleIdx];
+      var nextIdx = (LETTER_CYCLE.indexOf(cur) + 1) % LETTER_CYCLE.length;
+      state.phases[phaseIdx].tasks[taskIdx].raci[roleIdx] = LETTER_CYCLE[nextIdx];
+      renderTable();
+      renderHealth();
+    });
+
+    templateBtnsEl.addEventListener('click', function(e){
+      var card = e.target.closest('[data-template]');
+      if (!card) return;
+      var key = card.getAttribute('data-template');
+      if (!TEMPLATES[key] || key === state.templateKey) return;
+      state.templateKey = key;
+      state.roles = TEMPLATES[key].roles.slice();
+      state.phases = cloneDeep(TEMPLATES[key].phases);
+      renderAll();
+    });
+
+    tabBtns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var target = btn.getAttribute('data-raci-tab');
+        tabBtns.forEach(function(b){ b.classList.toggle('on', b === btn); });
+        panes.forEach(function(p){ p.classList.toggle('on', p.getAttribute('data-raci-pane') === target); });
+      });
+    });
+
+    renderAll();
+  })();
+  </script>
 </body>
 </html>

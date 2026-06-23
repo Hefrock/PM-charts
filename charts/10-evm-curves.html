@@ -6,7 +6,7 @@
   <title>EVM curves — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +17,70 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+    .evm-tabs {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .evm-panel { display: none; }
+    .evm-panel.on { display: block; }
+    .evm-chart-box {
+      position: relative;
+      height: 320px;
+      margin-bottom: 14px;
+    }
+    .evm-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .evm-kpi-label {
+      font-size: 11px; color: var(--pm-tx-secondary); margin-bottom: 3px;
+    }
+    .evm-kpi-value {
+      font-size: 19px; font-weight: 600;
+    }
+    .evm-kpi-sub {
+      font-size: 10.5px; margin-top: 2px; opacity: .85;
+    }
+    .evm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .evm-table th, .evm-table td {
+      text-align: left;
+      padding: 7px 10px;
+      border-bottom: 0.5px solid var(--pm-border);
+    }
+    .evm-table th {
+      color: var(--pm-tx-secondary);
+      font-weight: 500;
+      font-size: 11px;
+    }
+    .evm-table td.evm-metric-name {
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+      white-space: nowrap;
+    }
+    .evm-table td.evm-metric-val {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .evm-slider-name {
+      flex: 0 0 130px;
+      color: var(--pm-tx-primary);
+      font-weight: 500;
+    }
+    .evm-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--pm-coral-400);
+    }
+    .evm-slider-val {
+      flex: 0 0 90px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+    }
   </style>
 </head>
 <body>
@@ -26,20 +90,32 @@
     <h1 class="chart-title">EVM curves</h1>
     <p class="chart-subtitle">Schedule and cost performance in one financial view.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 10: EVM curves<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
-        </div>
+      <div class="evm-tabs" role="tablist">
+        <button type="button" class="pm-tab-btn on" data-evm-tab="chart">Chart</button>
+        <button type="button" class="pm-tab-btn" data-evm-tab="table">Metrics table</button>
+        <button type="button" class="pm-tab-btn" data-evm-tab="sim">Simulator</button>
+      </div>
+
+      <!-- Chart tab -->
+      <div class="evm-panel on" data-evm-panel="chart">
+        <div class="evm-chart-box"><canvas id="evm-chart-main" aria-label="EVM PV EC AC EAC curves" role="img"></canvas></div>
+        <div class="evm-kpi-row" id="evm-kpi-row-main"></div>
+      </div>
+
+      <!-- Metrics table tab -->
+      <div class="evm-panel" data-evm-panel="table">
+        <table class="evm-table">
+          <thead><tr><th>Metric</th><th>Value</th><th>Definition</th></tr></thead>
+          <tbody id="evm-metrics-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Simulator tab -->
+      <div class="evm-panel" data-evm-panel="sim">
+        <div class="evm-chart-box"><canvas id="evm-chart-sim" aria-label="Simulated EVM curves" role="img"></canvas></div>
+        <div class="evm-kpi-row" id="evm-kpi-row-sim"></div>
+        <div id="evm-sim-sliders" style="margin-top:14px;"></div>
       </div>
     </div>
 
@@ -60,5 +136,275 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var PERIODS = 12;
+    var LABELS = [];
+    for (var i = 1; i <= PERIODS; i++) { LABELS.push('P' + i); }
+
+    var BAC = 1200000; // budget at completion
+    var TODAY_PERIOD = 7; // 1-indexed "today"
+
+    // Cumulative PV — even budget burn across 12 periods (S-curve-ish ramp)
+    var PV_WEIGHTS = [4, 6, 8, 9, 10, 10, 10, 10, 9, 8, 8, 8]; // sums to 100
+    var pvCum = [];
+    (function(){
+      var total = PV_WEIGHTS.reduce(function(a,b){ return a+b; }, 0);
+      var running = 0;
+      PV_WEIGHTS.forEach(function(w){
+        running += w / total * BAC;
+        pvCum.push(Math.round(running));
+      });
+    })();
+
+    // Base EV/AC cumulative through "today" — slightly behind schedule, slightly over cost
+    var BASE_EV_TODAY = Math.round(pvCum[TODAY_PERIOD - 1] * 0.90); // 10% behind plan
+    var BASE_AC_TODAY = Math.round(BASE_EV_TODAY * 1.12); // running ~12% over cost
+
+    var state = {
+      evToday: BASE_EV_TODAY,
+      acToday: BASE_AC_TODAY
+    };
+
+    function buildEvAcCum() {
+      // EV ramps similarly to PV shape but scaled to reach evToday by TODAY_PERIOD, flat after (no data past today)
+      var evCum = [];
+      var acCum = [];
+      var pvTodayCum = pvCum[TODAY_PERIOD - 1];
+      for (var i = 0; i < TODAY_PERIOD; i++) {
+        var frac = pvCum[i] / pvTodayCum;
+        evCum.push(Math.round(frac * state.evToday));
+        acCum.push(Math.round(frac * state.acToday));
+      }
+      return { evCum: evCum, acCum: acCum };
+    }
+
+    function computeMetrics() {
+      var cum = buildEvAcCum();
+      var EV = cum.evCum[TODAY_PERIOD - 1];
+      var AC = cum.acCum[TODAY_PERIOD - 1];
+      var PV = pvCum[TODAY_PERIOD - 1];
+      var SV = EV - PV;
+      var CV = EV - AC;
+      var SPI = PV !== 0 ? EV / PV : 0;
+      var CPI = AC !== 0 ? EV / AC : 0;
+      var EAC = CPI !== 0 ? BAC / CPI : 0;
+      var ETC = EAC - AC;
+      var VAC = BAC - EAC;
+      var TCPI = (BAC - AC) !== 0 ? (BAC - EV) / (BAC - AC) : 0;
+      return { PV: PV, EV: EV, AC: AC, SV: SV, CV: CV, SPI: SPI, CPI: CPI, EAC: EAC, ETC: ETC, VAC: VAC, TCPI: TCPI, evCum: cum.evCum, acCum: cum.acCum };
+    }
+
+    function fmtMoney(v) {
+      var sign = v < 0 ? '-' : '';
+      v = Math.abs(Math.round(v));
+      return sign + '$' + v.toLocaleString('en-US');
+    }
+    function fmtRatio(v) { return v.toFixed(2); }
+
+    function statusClass(metric, value) {
+      if (metric === 'SPI' || metric === 'CPI') {
+        if (value >= 0.95) return 'pm-kpi-good';
+        if (value >= 0.85) return 'pm-kpi-warn';
+        return 'pm-kpi-bad';
+      }
+      if (metric === 'VAC') {
+        return value >= 0 ? 'pm-kpi-good' : 'pm-kpi-bad';
+      }
+      return 'pm-kpi-info';
+    }
+
+    function readColors() {
+      var css = getComputedStyle(document.documentElement);
+      var v = function(name){ return css.getPropertyValue(name).trim(); };
+      return {
+        grid: v('--pm-chart-grid'),
+        axis: v('--pm-chart-axis'),
+        tooltipBg: v('--pm-chart-tooltip-bg'),
+        tooltipBd: v('--pm-chart-tooltip-bd'),
+        tooltipTx: v('--pm-chart-tooltip-tx'),
+        purple: v('--pm-purple-400'),
+        green: v('--pm-green-400'),
+        red: v('--pm-red-400'),
+        amber: v('--pm-amber-400')
+      };
+    }
+
+    function buildChartConfig(colors, metrics) {
+      var pvData = pvCum.slice();
+      var evData = metrics.evCum.concat(new Array(PERIODS - TODAY_PERIOD).fill(null));
+      var acData = metrics.acCum.concat(new Array(PERIODS - TODAY_PERIOD).fill(null));
+
+      // EAC forecast line: null until "today", then EAC trend from today's AC to EAC at period 12
+      var eacData = new Array(PERIODS).fill(null);
+      eacData[TODAY_PERIOD - 1] = metrics.AC;
+      for (var i = TODAY_PERIOD; i < PERIODS; i++) {
+        var frac = (i - (TODAY_PERIOD - 1)) / (PERIODS - (TODAY_PERIOD - 1));
+        eacData[i] = Math.round(metrics.AC + frac * (metrics.EAC - metrics.AC));
+      }
+
+      return {
+        type: 'line',
+        data: {
+          labels: LABELS,
+          datasets: [
+            { label: 'PV', data: pvData, borderColor: colors.purple, backgroundColor: colors.purple, borderWidth: 2, pointRadius: 2, tension: 0.25, fill: false },
+            { label: 'EV', data: evData, borderColor: colors.green, backgroundColor: colors.green, borderWidth: 2, pointRadius: 2, tension: 0.25, fill: false, spanGaps: false },
+            { label: 'AC', data: acData, borderColor: colors.red, backgroundColor: colors.red, borderWidth: 2, pointRadius: 2, tension: 0.25, fill: false, spanGaps: false },
+            { label: 'EAC forecast', data: eacData, borderColor: colors.amber, backgroundColor: colors.amber, borderWidth: 2, borderDash: [6, 4], pointRadius: 2, tension: 0.15, fill: false, spanGaps: true }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: colors.axis, font: { size: 11 }, boxWidth: 12 } },
+            tooltip: {
+              backgroundColor: colors.tooltipBg,
+              borderColor: colors.tooltipBd,
+              borderWidth: 1,
+              titleColor: colors.tooltipTx,
+              bodyColor: colors.tooltipTx,
+              padding: 8,
+              callbacks: {
+                label: function(ctx){
+                  if (ctx.parsed.y === null) return undefined;
+                  return ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: colors.grid }, ticks: { color: colors.axis, font: { size: 11 } } },
+            y: {
+              grid: { color: colors.grid },
+              ticks: {
+                color: colors.axis, font: { size: 11 },
+                callback: function(v){ return '$' + (v / 1000).toFixed(0) + 'k'; }
+              }
+            }
+          }
+        }
+      };
+    }
+
+    var mainChart = null;
+    var simChart = null;
+
+    function renderKpis(containerId, metrics) {
+      var el = document.getElementById(containerId);
+      var items = [
+        { key: 'SPI', label: 'SPI (schedule perf.)', value: fmtRatio(metrics.SPI) },
+        { key: 'CPI', label: 'CPI (cost perf.)', value: fmtRatio(metrics.CPI) },
+        { key: 'EAC', label: 'EAC (forecast cost)', value: fmtMoney(metrics.EAC) },
+        { key: 'VAC', label: 'VAC (variance at completion)', value: fmtMoney(metrics.VAC) }
+      ];
+      el.innerHTML = items.map(function(it){
+        var cls = statusClass(it.key, it.key === 'EAC' ? metrics.CPI : metrics[it.key]);
+        return '<div class="pm-kpi ' + cls + '">' +
+          '<div class="evm-kpi-label">' + it.label + '</div>' +
+          '<div class="evm-kpi-value">' + it.value + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderTable(metrics) {
+      var rows = [
+        { name: 'SV', value: fmtMoney(metrics.SV), def: 'Schedule variance — EV minus PV. Positive means ahead of schedule.' },
+        { name: 'CV', value: fmtMoney(metrics.CV), def: 'Cost variance — EV minus AC. Positive means under budget.' },
+        { name: 'SPI', value: fmtRatio(metrics.SPI), def: 'Schedule performance index — EV divided by PV.' },
+        { name: 'CPI', value: fmtRatio(metrics.CPI), def: 'Cost performance index — EV divided by AC.' },
+        { name: 'EAC', value: fmtMoney(metrics.EAC), def: 'Estimate at completion — BAC divided by CPI.' },
+        { name: 'ETC', value: fmtMoney(metrics.ETC), def: 'Estimate to complete — EAC minus AC.' },
+        { name: 'VAC', value: fmtMoney(metrics.VAC), def: 'Variance at completion — BAC minus EAC.' },
+        { name: 'TCPI', value: fmtRatio(metrics.TCPI), def: 'To-complete performance index — efficiency needed on remaining work to hit BAC.' }
+      ];
+      var tbody = document.getElementById('evm-metrics-tbody');
+      tbody.innerHTML = rows.map(function(r){
+        return '<tr><td class="evm-metric-name">' + r.name + '</td><td class="evm-metric-val">' + r.value + '</td><td>' + r.def + '</td></tr>';
+      }).join('');
+    }
+
+    function refresh() {
+      var colors = readColors();
+      var metrics = computeMetrics();
+
+      var mainCtx = document.getElementById('evm-chart-main').getContext('2d');
+      var mainConfig = buildChartConfig(colors, metrics);
+      if (mainChart) { mainChart.destroy(); }
+      mainChart = new Chart(mainCtx, mainConfig);
+
+      var simCtx = document.getElementById('evm-chart-sim').getContext('2d');
+      var simConfig = buildChartConfig(colors, metrics);
+      if (simChart) { simChart.destroy(); }
+      simChart = new Chart(simCtx, simConfig);
+
+      renderKpis('evm-kpi-row-main', metrics);
+      renderKpis('evm-kpi-row-sim', metrics);
+      renderTable(metrics);
+    }
+
+    function setupTabs() {
+      var btns = document.querySelectorAll('[data-evm-tab]');
+      btns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+          btns.forEach(function(b){ b.classList.remove('on'); });
+          btn.classList.add('on');
+          var target = btn.getAttribute('data-evm-tab');
+          document.querySelectorAll('[data-evm-panel]').forEach(function(panel){
+            panel.classList.toggle('on', panel.getAttribute('data-evm-panel') === target);
+          });
+          if (target === 'chart' && mainChart) mainChart.resize();
+          if (target === 'sim' && simChart) simChart.resize();
+        });
+      });
+    }
+
+    function renderSimSliders() {
+      var wrap = document.getElementById('evm-sim-sliders');
+      var maxVal = Math.round(BAC * 0.5);
+      wrap.innerHTML =
+        '<div class="pm-slider-row evm-slider-row" data-field="evToday">' +
+          '<span class="evm-slider-name">EV at period ' + TODAY_PERIOD + '</span>' +
+          '<input type="range" min="0" max="' + maxVal + '" step="5000" value="' + state.evToday + '">' +
+          '<span class="evm-slider-val">' + fmtMoney(state.evToday) + '</span>' +
+        '</div>' +
+        '<div class="pm-slider-row evm-slider-row" data-field="acToday">' +
+          '<span class="evm-slider-name">AC at period ' + TODAY_PERIOD + '</span>' +
+          '<input type="range" min="0" max="' + maxVal + '" step="5000" value="' + state.acToday + '">' +
+          '<span class="evm-slider-val">' + fmtMoney(state.acToday) + '</span>' +
+        '</div>';
+
+      wrap.querySelectorAll('.evm-slider-row').forEach(function(row){
+        var field = row.getAttribute('data-field');
+        var input = row.querySelector('input[type="range"]');
+        var valSpan = row.querySelector('.evm-slider-val');
+        input.addEventListener('input', function(){
+          var v = parseInt(input.value, 10);
+          state[field] = v;
+          valSpan.textContent = fmtMoney(v);
+          refresh();
+        });
+      });
+    }
+
+    function init() {
+      setupTabs();
+      renderSimSliders();
+      refresh();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      refresh();
+    });
+
+  })();
+  </script>
 </body>
 </html>

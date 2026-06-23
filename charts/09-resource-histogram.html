@@ -6,7 +6,7 @@
   <title>Resource histogram — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +17,77 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+    .rh-tabs {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .rh-panel { display: none; }
+    .rh-panel.on { display: block; }
+    .rh-chart-box {
+      position: relative;
+      height: 320px;
+      margin-bottom: 10px;
+    }
+    .rh-controls-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .rh-controls-row label {
+      font-size: 12px; color: var(--pm-tx-secondary);
+    }
+    .rh-select {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: var(--pm-radius-sm);
+      border: 0.5px solid var(--pm-border-strong);
+      background: var(--pm-surface);
+      color: var(--pm-tx-primary);
+    }
+    .rh-slider-name {
+      flex: 0 0 110px;
+      color: var(--pm-tx-primary);
+      font-weight: 500;
+    }
+    .rh-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--pm-coral-400);
+    }
+    .rh-slider-val {
+      flex: 0 0 48px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+    }
+    .rh-alerts {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .rh-alert-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px;
+      color: var(--pm-tx-primary);
+    }
+    .rh-alert-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--pm-bad-bd);
+      flex: 0 0 8px;
+    }
+    .rh-alert-empty {
+      font-size: 12px; color: var(--pm-tx-tertiary);
+    }
+    .rh-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .rh-kpi-label {
+      font-size: 11px; color: var(--pm-tx-secondary); margin-bottom: 2px;
+    }
+    .rh-kpi-value {
+      font-size: 18px; font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -26,20 +97,40 @@
     <h1 class="chart-title">Resource histogram</h1>
     <p class="chart-subtitle">Spot over-allocation before it causes burnout.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 09: Resource histogram<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="rh-tabs" role="tablist">
+        <button type="button" class="pm-tab-btn on" data-rh-tab="stacked">Stacked</button>
+        <button type="button" class="pm-tab-btn" data-rh-tab="person">Per-person</button>
+        <button type="button" class="pm-tab-btn" data-rh-tab="sim">Simulator</button>
+      </div>
+
+      <!-- Stacked tab -->
+      <div class="rh-panel on" data-rh-panel="stacked">
+        <div class="rh-chart-box"><canvas id="rh-chart-stacked" aria-label="Stacked weekly resource allocation by person" role="img"></canvas></div>
+      </div>
+
+      <!-- Per-person tab -->
+      <div class="rh-panel" data-rh-panel="person">
+        <div class="rh-controls-row">
+          <label for="rh-person-select">Show:</label>
+          <select id="rh-person-select" class="rh-select"></select>
         </div>
+        <div class="rh-chart-box"><canvas id="rh-chart-person" aria-label="Single person weekly allocation" role="img"></canvas></div>
+      </div>
+
+      <!-- Simulator tab -->
+      <div class="rh-panel" data-rh-panel="sim">
+        <div class="rh-controls-row">
+          <label for="rh-week-select">Week:</label>
+          <select id="rh-week-select" class="rh-select"></select>
+        </div>
+        <div class="rh-chart-box"><canvas id="rh-chart-sim" aria-label="Simulated weekly resource allocation" role="img"></canvas></div>
+        <div id="rh-sim-sliders"></div>
+      </div>
+
+      <div id="rh-alerts-wrap">
+        <h3 class="doc-title" style="margin-top:18px;font-size:13px;">Over-allocation alerts</h3>
+        <div class="rh-alerts" id="rh-alerts"></div>
       </div>
     </div>
 
@@ -60,5 +151,316 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var PEOPLE = ['Mara Chen', 'Devon Ruiz', 'Priya Anand', 'Tom Becker', 'Lena Schmidt'];
+    var WEEKS = ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8'];
+
+    // Base allocation %, 8 weeks x 5 people — plausible, with some over-allocation
+    var BASE_DATA = {
+      'Mara Chen':    [80, 90, 100, 110, 120, 100, 90, 80],
+      'Devon Ruiz':   [60, 70, 80, 90, 95, 100, 105, 90],
+      'Priya Anand':  [100, 100, 110, 130, 120, 100, 90, 70],
+      'Tom Becker':   [40, 50, 60, 70, 80, 90, 100, 110],
+      'Lena Schmidt': [70, 65, 75, 85, 90, 100, 95, 85]
+    };
+
+    // working copy mutated by the simulator
+    var data = {};
+    PEOPLE.forEach(function(p){ data[p] = BASE_DATA[p].slice(); });
+
+    var PERSON_COLOR_VARS = ['--pm-coral-400','--pm-purple-400','--pm-blue-400','--pm-teal-400','--pm-amber-400','--pm-red-400'];
+
+    function readColors() {
+      var css = getComputedStyle(document.documentElement);
+      var v = function(name){ return css.getPropertyValue(name).trim(); };
+      return {
+        grid: v('--pm-chart-grid'),
+        axis: v('--pm-chart-axis'),
+        tooltipBg: v('--pm-chart-tooltip-bg'),
+        tooltipBd: v('--pm-chart-tooltip-bd'),
+        tooltipTx: v('--pm-chart-tooltip-tx'),
+        bad: v('--pm-bad-bd'),
+        people: PERSON_COLOR_VARS.map(v)
+      };
+    }
+
+    function commonScales(colors, suggestedMax) {
+      return {
+        x: {
+          grid: { color: colors.grid },
+          ticks: { color: colors.axis, font: { size: 11 } }
+        },
+        y: {
+          stacked: true,
+          min: 0,
+          suggestedMax: suggestedMax || 140,
+          grid: { color: colors.grid },
+          ticks: { color: colors.axis, font: { size: 11 }, callback: function(v){ return v + '%'; } }
+        }
+      };
+    }
+
+    function tooltipOpts(colors) {
+      return {
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.tooltipBd,
+        borderWidth: 1,
+        titleColor: colors.tooltipTx,
+        bodyColor: colors.tooltipTx,
+        padding: 8,
+        callbacks: {
+          label: function(ctx){
+            if (ctx.dataset.type === 'line') return ctx.dataset.label + ': ' + ctx.parsed.y + '%';
+            return ctx.dataset.label + ': ' + ctx.parsed.y + '%';
+          }
+        }
+      };
+    }
+
+    function capLineDataset(colors, label) {
+      return {
+        type: 'line',
+        label: label || '100% capacity',
+        data: WEEKS.map(function(){ return 100; }),
+        borderColor: colors.bad,
+        borderDash: [6, 4],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        stack: undefined,
+        order: 0
+      };
+    }
+
+    // ---- Stacked chart ----
+    var stackedChart = null;
+    function buildStackedChart() {
+      var colors = readColors();
+      var ctx = document.getElementById('rh-chart-stacked').getContext('2d');
+      var datasets = PEOPLE.map(function(p, i){
+        return {
+          type: 'bar',
+          label: p,
+          data: data[p].slice(),
+          backgroundColor: colors.people[i % colors.people.length],
+          stack: 'alloc'
+        };
+      });
+      datasets.push(capLineDataset(colors));
+
+      var config = {
+        type: 'bar',
+        data: { labels: WEEKS, datasets: datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: colors.axis, font: { size: 11 }, boxWidth: 12 } },
+            tooltip: tooltipOpts(colors)
+          },
+          scales: commonScales(colors)
+        }
+      };
+
+      if (stackedChart) { stackedChart.destroy(); }
+      stackedChart = new Chart(ctx, config);
+    }
+
+    // ---- Per-person chart ----
+    var personChart = null;
+    function buildPersonChart() {
+      var colors = readColors();
+      var select = document.getElementById('rh-person-select');
+      var person = select.value || PEOPLE[0];
+      var idx = PEOPLE.indexOf(person);
+      var ctx = document.getElementById('rh-chart-person').getContext('2d');
+
+      var barColors = data[person].map(function(v){ return v > 100 ? colors.bad : colors.people[idx % colors.people.length]; });
+
+      var config = {
+        type: 'bar',
+        data: {
+          labels: WEEKS,
+          datasets: [
+            {
+              type: 'bar',
+              label: person,
+              data: data[person].slice(),
+              backgroundColor: barColors,
+              stack: undefined
+            },
+            capLineDataset(colors)
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: colors.axis, font: { size: 11 }, boxWidth: 12 } },
+            tooltip: tooltipOpts(colors)
+          },
+          scales: {
+            x: commonScales(colors).x,
+            y: { min: 0, suggestedMax: 140, grid: { color: colors.grid }, ticks: { color: colors.axis, font: { size: 11 }, callback: function(v){ return v + '%'; } } }
+          }
+        }
+      };
+
+      if (personChart) { personChart.destroy(); }
+      personChart = new Chart(ctx, config);
+    }
+
+    // ---- Simulator chart ----
+    var simChart = null;
+    function buildSimChart() {
+      var colors = readColors();
+      var ctx = document.getElementById('rh-chart-sim').getContext('2d');
+      var datasets = PEOPLE.map(function(p, i){
+        return {
+          type: 'bar',
+          label: p,
+          data: data[p].slice(),
+          backgroundColor: colors.people[i % colors.people.length],
+          stack: 'alloc'
+        };
+      });
+      datasets.push(capLineDataset(colors));
+
+      var config = {
+        type: 'bar',
+        data: { labels: WEEKS, datasets: datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: colors.axis, font: { size: 11 }, boxWidth: 12 } },
+            tooltip: tooltipOpts(colors)
+          },
+          scales: commonScales(colors)
+        }
+      };
+
+      if (simChart) { simChart.destroy(); }
+      simChart = new Chart(ctx, config);
+    }
+
+    function refreshAllCharts() {
+      buildStackedChart();
+      buildPersonChart();
+      buildSimChart();
+      renderAlerts();
+    }
+
+    // ---- Alerts ----
+    function renderAlerts() {
+      var wrap = document.getElementById('rh-alerts');
+      var rows = [];
+      PEOPLE.forEach(function(p){
+        data[p].forEach(function(v, wi){
+          if (v > 100) {
+            rows.push({ person: p, week: wi + 1, value: v });
+          }
+        });
+      });
+      rows.sort(function(a, b){ return b.value - a.value; });
+
+      if (!rows.length) {
+        wrap.innerHTML = '<div class="rh-alert-empty">No over-allocation this period. Everyone is at or under 100% capacity.</div>';
+        return;
+      }
+      wrap.innerHTML = rows.map(function(r){
+        return '<div class="rh-alert-item"><span class="rh-alert-dot"></span>' +
+          r.person + ' — Week ' + r.week + ' — ' + r.value + '%</div>';
+      }).join('');
+    }
+
+    // ---- Tabs ----
+    function setupTabs() {
+      var btns = document.querySelectorAll('[data-rh-tab]');
+      btns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+          btns.forEach(function(b){ b.classList.remove('on'); });
+          btn.classList.add('on');
+          var target = btn.getAttribute('data-rh-tab');
+          document.querySelectorAll('[data-rh-panel]').forEach(function(panel){
+            panel.classList.toggle('on', panel.getAttribute('data-rh-panel') === target);
+          });
+          // Charts inside a panel that was display:none don't size correctly — resize on show
+          if (target === 'stacked' && stackedChart) stackedChart.resize();
+          if (target === 'person' && personChart) personChart.resize();
+          if (target === 'sim' && simChart) simChart.resize();
+        });
+      });
+    }
+
+    // ---- Per-person select ----
+    function setupPersonSelect() {
+      var select = document.getElementById('rh-person-select');
+      select.innerHTML = PEOPLE.map(function(p){ return '<option value="' + p + '">' + p + '</option>'; }).join('');
+      select.addEventListener('change', buildPersonChart);
+    }
+
+    // ---- Simulator: week select + sliders ----
+    var currentWeek = 0;
+    function setupWeekSelect() {
+      var select = document.getElementById('rh-week-select');
+      select.innerHTML = WEEKS.map(function(w, i){ return '<option value="' + i + '">' + w + '</option>'; }).join('');
+      select.addEventListener('change', function(){
+        currentWeek = parseInt(select.value, 10);
+        renderSimSliders();
+      });
+    }
+
+    function renderSimSliders() {
+      var wrap = document.getElementById('rh-sim-sliders');
+      wrap.innerHTML = PEOPLE.map(function(p){
+        var val = data[p][currentWeek];
+        return '<div class="pm-slider-row rh-slider-row" data-person="' + p + '">' +
+          '<span class="rh-slider-name">' + p + '</span>' +
+          '<input type="range" min="0" max="130" step="5" value="' + val + '">' +
+          '<span class="rh-slider-val">' + val + '%</span>' +
+          '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('.rh-slider-row').forEach(function(row){
+        var person = row.getAttribute('data-person');
+        var input = row.querySelector('input[type="range"]');
+        var valSpan = row.querySelector('.rh-slider-val');
+        input.addEventListener('input', function(){
+          var v = parseInt(input.value, 10);
+          data[person][currentWeek] = v;
+          valSpan.textContent = v + '%';
+          buildSimChart();
+          buildStackedChart();
+          buildPersonChart();
+          renderAlerts();
+        });
+      });
+    }
+
+    // ---- Init ----
+    function init() {
+      setupTabs();
+      setupPersonSelect();
+      setupWeekSelect();
+      renderSimSliders();
+      refreshAllCharts();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      refreshAllCharts();
+    });
+
+  })();
+  </script>
 </body>
 </html>

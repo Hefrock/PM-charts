@@ -6,7 +6,6 @@
   <title>Critical path — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,77 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    .cp-kpi-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .cp-kpi-row .pm-kpi { flex: 1 1 200px; }
+    .cp-kpi-label { font-size: 10px; color: var(--pm-tx-tertiary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+    .cp-kpi-value { font-size: 16px; font-weight: 600; }
+
+    .cp-diagram-scroll {
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .cp-diagram {
+      position: relative;
+      min-width: 760px;
+    }
+    .cp-svg { position: absolute; top: 0; left: 0; overflow: visible; }
+
+    .cp-node {
+      position: absolute;
+      width: 132px;
+      background: var(--pm-surface-sub);
+      border: 1.5px solid var(--pm-border-strong);
+      border-radius: var(--pm-radius-md);
+      padding: 7px 9px;
+      font-size: 11px;
+      box-sizing: border-box;
+      z-index: 1;
+      transition: left .2s, top .2s, border-color .15s;
+    }
+    .cp-node.critical {
+      border: 2px solid var(--pm-process-bd);
+      background: var(--pm-process-bg);
+      box-shadow: 0 0 0 1px var(--pm-process-bd) inset;
+    }
+    .cp-node-name { font-weight: 600; color: var(--pm-tx-primary); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+    .cp-node.critical .cp-node-name { color: var(--pm-process-tx); }
+    .cp-badge-critical {
+      font-size: 9px; font-weight: 700;
+      padding: 1px 6px;
+      border-radius: var(--pm-radius-pill);
+      background: var(--pm-process-bd);
+      color: var(--pm-surface);
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .cp-node-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px 8px;
+      font-size: 10px;
+      color: var(--pm-tx-secondary);
+    }
+    .cp-node.critical .cp-node-grid { color: var(--pm-process-tx); }
+    .cp-node-grid b { color: var(--pm-tx-primary); font-weight: 600; }
+    .cp-node.critical .cp-node-grid b { color: var(--pm-process-tx); }
+    .cp-node-float {
+      margin-top: 4px; font-size: 10px; font-weight: 600;
+      color: var(--pm-tx-secondary);
+    }
+    .cp-node.critical .cp-node-float { color: var(--pm-process-tx); }
+
+    .cp-sliders {
+      max-height: 280px;
+      overflow-y: auto;
+      border-top: 0.5px solid var(--pm-border);
+      padding-top: 4px;
+    }
+    .cp-slider-row input[type="range"] { flex: 1 1 auto; accent-color: var(--pm-process-bd); }
+    .cp-slider-name { flex: 0 0 150px; color: var(--pm-tx-primary); font-weight: 500; }
+    .cp-slider-val { flex: 0 0 56px; text-align: right; color: var(--pm-tx-secondary); font-size: 11px; }
+    .cp-reset-btn { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -26,21 +96,26 @@
     <h1 class="chart-title">Critical path</h1>
     <p class="chart-subtitle">Find what is truly unmovable in your schedule.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 05: Critical path<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="cp-kpi-row">
+        <div class="pm-kpi pm-kpi-good" id="cpDurationKpi">
+          <div class="cp-kpi-label">Project duration</div>
+          <div class="cp-kpi-value" id="cpDurationValue">— weeks</div>
+        </div>
+        <div class="pm-kpi pm-kpi-info" id="cpCriticalKpi">
+          <div class="cp-kpi-label">Critical tasks</div>
+          <div class="cp-kpi-value" id="cpCriticalValue">—</div>
         </div>
       </div>
+
+      <div class="cp-diagram-scroll">
+        <div class="cp-diagram" id="cpDiagram">
+          <svg class="cp-svg" id="cpSvg"></svg>
+        </div>
+      </div>
+
+      <div class="cp-sliders" id="cpSliders"></div>
+      <button type="button" class="pm-tab-btn cp-reset-btn" id="cpResetBtn">Reset delays</button>
     </div>
 
     <!-- Documentation -->
@@ -60,5 +135,289 @@
     </div>
 
   </div>
+  <script>
+  (function(){
+    // ── Task graph definition (id, name, base duration in weeks, predecessor ids) ──
+    var TASKS = [
+      { id:'A', name:'Discovery',          base:2, preds:[] },
+      { id:'B', name:'Backend design',      base:3, preds:['A'] },
+      { id:'C', name:'UX design',           base:2, preds:['A'] },
+      { id:'D', name:'API build',           base:4, preds:['B'] },
+      { id:'E', name:'Prototype testing',   base:3, preds:['C'] },
+      { id:'F', name:'Integration',         base:2, preds:['D','E'] },
+      { id:'G', name:'QA pass',             base:3, preds:['F'] },
+      { id:'H', name:'Security review',     base:2, preds:['F'] },
+      { id:'I', name:'UAT signoff',         base:2, preds:['G','H'] },
+      { id:'J', name:'Go-live',             base:1, preds:['I'] }
+    ];
+
+    var delays = {};
+    TASKS.forEach(function(t){ delays[t.id] = 0; });
+
+    var byId = {};
+    TASKS.forEach(function(t){ byId[t.id] = t; });
+    TASKS.forEach(function(t){
+      t.succs = TASKS.filter(function(o){ return o.preds.indexOf(t.id) !== -1; }).map(function(o){ return o.id; });
+    });
+
+    var diagram = document.getElementById('cpDiagram');
+    var svg = document.getElementById('cpSvg');
+    var slidersEl = document.getElementById('cpSliders');
+    var durationKpi = document.getElementById('cpDurationKpi');
+    var durationValue = document.getElementById('cpDurationValue');
+    var criticalValue = document.getElementById('cpCriticalValue');
+    var resetBtn = document.getElementById('cpResetBtn');
+
+    var baselineEnd = null;
+
+    // ── Topological levels (columns) via longest-path-from-start ──
+    function computeLevels(){
+      var level = {};
+      var visited = {};
+      function visit(id){
+        if (visited[id]) return level[id];
+        visited[id] = true;
+        var t = byId[id];
+        if (t.preds.length === 0) {
+          level[id] = 0;
+        } else {
+          level[id] = Math.max.apply(null, t.preds.map(visit)) + 1;
+        }
+        return level[id];
+      }
+      TASKS.forEach(function(t){ visit(t.id); });
+      return level;
+    }
+    var levels = computeLevels();
+
+    // ── CPM forward + backward pass ──
+    function runCPM(){
+      var dur = {};
+      TASKS.forEach(function(t){ dur[t.id] = t.base + (Number(delays[t.id]) || 0); });
+
+      var es = {}, ef = {};
+      // Forward pass — process in level order so predecessors are resolved first
+      var order = TASKS.slice().sort(function(a, b){ return levels[a.id] - levels[b.id]; });
+      order.forEach(function(t){
+        if (t.preds.length === 0) {
+          es[t.id] = 0;
+        } else {
+          es[t.id] = Math.max.apply(null, t.preds.map(function(p){ return ef[p]; }));
+        }
+        ef[t.id] = es[t.id] + dur[t.id];
+      });
+
+      var projectEnd = Math.max.apply(null, TASKS.map(function(t){ return ef[t.id]; }));
+
+      var ls = {}, lf = {};
+      var rev = order.slice().reverse();
+      rev.forEach(function(t){
+        if (t.succs.length === 0) {
+          lf[t.id] = projectEnd;
+        } else {
+          lf[t.id] = Math.min.apply(null, t.succs.map(function(s){ return ls[s]; }));
+        }
+        ls[t.id] = lf[t.id] - dur[t.id];
+      });
+
+      var float = {};
+      TASKS.forEach(function(t){ float[t.id] = ls[t.id] - es[t.id]; });
+
+      return { dur: dur, es: es, ef: ef, ls: ls, lf: lf, float: float, end: projectEnd };
+    }
+
+    // ── Layout: position nodes by column (level), stacked vertically within column ──
+    var COL_WIDTH = 168;
+    var ROW_HEIGHT = 108;
+    var NODE_W = 132;
+    var NODE_H = 88;
+
+    function layoutPositions(){
+      var byLevel = {};
+      TASKS.forEach(function(t){
+        var l = levels[t.id];
+        if (!byLevel[l]) byLevel[l] = [];
+        byLevel[l].push(t.id);
+      });
+      var pos = {};
+      Object.keys(byLevel).forEach(function(l){
+        byLevel[l].forEach(function(id, i){
+          pos[id] = {
+            x: Number(l) * COL_WIDTH + 10,
+            y: i * ROW_HEIGHT + 10
+          };
+        });
+      });
+      var maxLevel = Math.max.apply(null, Object.keys(byLevel).map(Number));
+      var maxRows = Math.max.apply(null, Object.keys(byLevel).map(function(l){ return byLevel[l].length; }));
+      return { pos: pos, width: (maxLevel + 1) * COL_WIDTH + NODE_W, height: maxRows * ROW_HEIGHT + NODE_H };
+    }
+
+    var layout = layoutPositions();
+    diagram.style.height = layout.height + 'px';
+    svg.setAttribute('width', layout.width);
+    svg.setAttribute('height', layout.height);
+    svg.style.width = layout.width + 'px';
+    svg.style.height = layout.height + 'px';
+
+    // ── Build node DOM elements once ──
+    var nodeEls = {};
+    TASKS.forEach(function(t){
+      var el = document.createElement('div');
+      el.className = 'cp-node';
+      el.style.left = layout.pos[t.id].x + 'px';
+      el.style.top = layout.pos[t.id].y + 'px';
+
+      var nameRow = document.createElement('div');
+      nameRow.className = 'cp-node-name';
+      var nameTxt = document.createElement('span');
+      nameTxt.textContent = t.name;
+      nameRow.appendChild(nameTxt);
+      var badge = document.createElement('span');
+      badge.className = 'cp-badge-critical';
+      badge.textContent = 'Critical';
+      badge.style.display = 'none';
+      nameRow.appendChild(badge);
+      el.appendChild(nameRow);
+
+      var grid = document.createElement('div');
+      grid.className = 'cp-node-grid';
+      grid.innerHTML =
+        '<span>Dur: <b class="cp-v-dur"></b>w</span><span>ES: <b class="cp-v-es"></b></span>' +
+        '<span>EF: <b class="cp-v-ef"></b></span><span>LS: <b class="cp-v-ls"></b></span>' +
+        '<span>LF: <b class="cp-v-lf"></b></span><span></span>';
+      el.appendChild(grid);
+
+      var floatRow = document.createElement('div');
+      floatRow.className = 'cp-node-float';
+      el.appendChild(floatRow);
+
+      el._badge = badge;
+      el._floatRow = floatRow;
+      diagram.appendChild(el);
+      nodeEls[t.id] = el;
+    });
+
+    // ── Build edge list (pred -> succ) ──
+    var edges = [];
+    TASKS.forEach(function(t){
+      t.preds.forEach(function(p){ edges.push([p, t.id]); });
+    });
+
+    function redrawEdges(criticalSet){
+      svg.innerHTML =
+        '<defs>' +
+        '<marker id="cpArrowNormal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--pm-border-strong)"></path></marker>' +
+        '<marker id="cpArrowCritical" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--pm-process-bd)"></path></marker>' +
+        '</defs>';
+      edges.forEach(function(e){
+        var fromPos = layout.pos[e[0]];
+        var toPos = layout.pos[e[1]];
+        var x1 = fromPos.x + NODE_W;
+        var y1 = fromPos.y + NODE_H / 2;
+        var x2 = toPos.x;
+        var y2 = toPos.y + NODE_H / 2;
+        var isCritical = criticalSet.has(e[0]) && criticalSet.has(e[1]);
+        var midX = (x1 + x2) / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        var d = 'M' + x1 + ',' + y1 + ' C' + midX + ',' + y1 + ' ' + midX + ',' + y2 + ' ' + (x2 - 7) + ',' + y2;
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', isCritical ? 'var(--pm-process-bd)' : 'var(--pm-border-strong)');
+        path.setAttribute('stroke-width', isCritical ? '2' : '1.5');
+        path.setAttribute('marker-end', isCritical ? 'url(#cpArrowCritical)' : 'url(#cpArrowNormal)');
+        svg.appendChild(path);
+      });
+    }
+
+    function fmtWeeks(end){
+      return end + (end === 1 ? ' week' : ' weeks');
+    }
+
+    function render(){
+      var result = runCPM();
+      if (baselineEnd === null) baselineEnd = result.end;
+
+      var criticalSet = new Set();
+      TASKS.forEach(function(t){
+        if (result.float[t.id] === 0) criticalSet.add(t.id);
+      });
+
+      TASKS.forEach(function(t){
+        var el = nodeEls[t.id];
+        var isCritical = criticalSet.has(t.id);
+        el.classList.toggle('critical', isCritical);
+        el._badge.style.display = isCritical ? 'inline-block' : 'none';
+        el.querySelector('.cp-v-dur').textContent = result.dur[t.id];
+        el.querySelector('.cp-v-es').textContent = result.es[t.id];
+        el.querySelector('.cp-v-ef').textContent = result.ef[t.id];
+        el.querySelector('.cp-v-ls').textContent = result.ls[t.id];
+        el.querySelector('.cp-v-lf').textContent = result.lf[t.id];
+        el._floatRow.textContent = 'Float: ' + result.float[t.id] + 'w';
+      });
+
+      redrawEdges(criticalSet);
+
+      durationValue.textContent = fmtWeeks(result.end);
+      criticalValue.textContent = TASKS.filter(function(t){ return criticalSet.has(t.id); }).length + ' of ' + TASKS.length;
+
+      durationKpi.classList.remove('pm-kpi-good', 'pm-kpi-warn', 'pm-kpi-bad');
+      if (result.end <= baselineEnd) {
+        durationKpi.classList.add('pm-kpi-good');
+      } else if (result.end <= baselineEnd + 2) {
+        durationKpi.classList.add('pm-kpi-warn');
+      } else {
+        durationKpi.classList.add('pm-kpi-bad');
+      }
+    }
+
+    // ── Delay sliders ──
+    TASKS.forEach(function(t){
+      var row = document.createElement('div');
+      row.className = 'pm-slider-row cp-slider-row';
+
+      var label = document.createElement('span');
+      label.className = 'cp-slider-name';
+      label.textContent = t.name;
+
+      var input = document.createElement('input');
+      input.type = 'range';
+      input.min = '0';
+      input.max = '6';
+      input.step = '1';
+      input.value = '0';
+      input.setAttribute('aria-label', 'Extra delay (weeks) for ' + t.name);
+
+      var val = document.createElement('span');
+      val.className = 'cp-slider-val';
+      val.textContent = '+0w';
+
+      input.addEventListener('input', function(){
+        delays[t.id] = Number(input.value);
+        val.textContent = '+' + input.value + 'w';
+        render();
+      });
+
+      row.appendChild(label);
+      row.appendChild(input);
+      row.appendChild(val);
+      slidersEl.appendChild(row);
+
+      t._sliderInput = input;
+      t._sliderVal = val;
+    });
+
+    resetBtn.addEventListener('click', function(){
+      TASKS.forEach(function(t){
+        delays[t.id] = 0;
+        t._sliderInput.value = '0';
+        t._sliderVal.textContent = '+0w';
+      });
+      render();
+    });
+
+    render();
+  })();
+  </script>
 </body>
 </html>

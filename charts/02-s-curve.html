@@ -6,7 +6,7 @@
   <title>S-Curve — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -16,6 +16,48 @@
       border-radius: var(--pm-radius-lg);
       padding: 20px;
       margin-bottom: 8px;
+    }
+    .sc-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .sc-kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      opacity: .75;
+      margin-bottom: 4px;
+    }
+    .sc-kpi-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .sc-chart-shell {
+      position: relative;
+      height: 320px;
+      margin-bottom: 14px;
+    }
+    .sc-slider-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+    }
+    .sc-slider-block input[type="range"] {
+      flex: 1;
+      accent-color: var(--pm-coral-400);
+    }
+    .sc-slider-block .sc-today-label {
+      min-width: 84px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+    }
+    @media (max-width: 640px) {
+      .sc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -34,12 +76,33 @@
          Chart.js charts must read --pm-chart-* vars at runtime.
          ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 02: S-Curve<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="sc-kpi-grid" id="scKpiGrid">
+        <div class="pm-kpi" id="scKpiSpi">
+          <div class="sc-kpi-label">SPI</div>
+          <div class="sc-kpi-value" id="scKpiSpiVal">—</div>
         </div>
+        <div class="pm-kpi" id="scKpiCpi">
+          <div class="sc-kpi-label">CPI</div>
+          <div class="sc-kpi-value" id="scKpiCpiVal">—</div>
+        </div>
+        <div class="pm-kpi pm-kpi-info">
+          <div class="sc-kpi-label">Actual spend (AC)</div>
+          <div class="sc-kpi-value" id="scKpiAc">—</div>
+        </div>
+        <div class="pm-kpi pm-kpi-info">
+          <div class="sc-kpi-label">Forecast final cost</div>
+          <div class="sc-kpi-value" id="scKpiEac">—</div>
+        </div>
+      </div>
+
+      <div class="sc-chart-shell">
+        <canvas id="scCanvas" aria-label="S-curve chart of planned value, earned value, actual cost and forecast" role="img"></canvas>
+      </div>
+
+      <div class="sc-slider-block">
+        <label for="scTodaySlider" style="white-space:nowrap;">Today is period</label>
+        <input type="range" id="scTodaySlider" min="1" max="11" step="1" value="7">
+        <span class="sc-today-label" id="scTodayLabel">Period 7 of 12</span>
       </div>
     </div>
 
@@ -60,5 +123,244 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    // 12 periods, baseline PV is a smooth S-curve summing to 1200 "k$" total budget.
+    var PERIODS = 12;
+    var TOTAL_BUDGET = 1200;
+
+    // S-shaped weight distribution (slow-fast-slow) normalised to sum to 1.
+    function sCurveWeights(n){
+      var raw = [];
+      for (var i = 1; i <= n; i++){
+        var x = i / n;
+        // logistic-ish curve centred at .5
+        var w = 1 / (1 + Math.exp(-10 * (x - 0.5))) - 1 / (1 + Math.exp(-10 * (0 - 0.5)));
+        raw.push(w);
+      }
+      var sum = raw.reduce(function(a,b){return a+b;}, 0);
+      return raw.map(function(w){ return w / sum; });
+    }
+
+    var weights = sCurveWeights(PERIODS);
+    var pv = [];
+    var running = 0;
+    for (var i = 0; i < PERIODS; i++){
+      running += weights[i] * TOTAL_BUDGET;
+      pv.push(Math.round(running));
+    }
+    pv[PERIODS - 1] = TOTAL_BUDGET; // ensure exact close
+
+    // Plausible EV/AC actuals up through each period (slightly behind schedule, slightly over cost)
+    var evActualFactor = [1.00, 0.97, 0.95, 0.93, 0.92, 0.90, 0.89, 0.90, 0.91, 0.93, 0.95, 0.97];
+    var acActualFactor = [1.00, 1.02, 1.04, 1.06, 1.08, 1.10, 1.11, 1.10, 1.09, 1.07, 1.05, 1.03];
+    var evFull = pv.map(function(v, idx){ return Math.round(v * evActualFactor[idx]); });
+    var acFull = pv.map(function(v, idx){ return Math.round(v * acActualFactor[idx]); });
+
+    var labels = [];
+    for (var p = 1; p <= PERIODS; p++) labels.push('Period ' + p);
+
+    var slider = document.getElementById('scTodaySlider');
+    var todayLabel = document.getElementById('scTodayLabel');
+    var canvas = document.getElementById('scCanvas');
+    var chart = null;
+
+    function readColors(){
+      var css = getComputedStyle(document.documentElement);
+      return {
+        grid: css.getPropertyValue('--pm-chart-grid').trim(),
+        axis: css.getPropertyValue('--pm-chart-axis').trim(),
+        tooltipBg: css.getPropertyValue('--pm-chart-tooltip-bg').trim(),
+        tooltipBd: css.getPropertyValue('--pm-chart-tooltip-bd').trim(),
+        tooltipTx: css.getPropertyValue('--pm-chart-tooltip-tx').trim(),
+        purple: css.getPropertyValue('--pm-purple-400').trim(),
+        green: css.getPropertyValue('--pm-green-400').trim(),
+        red: css.getPropertyValue('--pm-red-400').trim(),
+        amber: css.getPropertyValue('--pm-amber-400').trim(),
+        good: css.getPropertyValue('--pm-good-bd').trim(),
+        warn: css.getPropertyValue('--pm-warn-bd').trim(),
+        bad: css.getPropertyValue('--pm-bad-bd').trim()
+      };
+    }
+
+    function computeForecast(todayIdx){
+      // CPI trend at "today" extrapolated to a final EAC using AC(today) + (BAC - EV(today)) / CPI
+      var ev = evFull[todayIdx];
+      var ac = acFull[todayIdx];
+      var cpi = ac > 0 ? ev / ac : 1;
+      var bac = TOTAL_BUDGET;
+      var eac = cpi > 0 ? ac + (bac - ev) / cpi : bac;
+      return { cpi: cpi, eac: eac };
+    }
+
+    function buildForecastSeries(todayIdx){
+      var fc = computeForecast(todayIdx);
+      var series = new Array(PERIODS).fill(null);
+      series[todayIdx] = acFull[todayIdx];
+      var remaining = PERIODS - 1 - todayIdx;
+      if (remaining > 0){
+        var step = (fc.eac - acFull[todayIdx]) / remaining;
+        for (var k = 1; k <= remaining; k++){
+          series[todayIdx + k] = Math.round(acFull[todayIdx] + step * k);
+        }
+      }
+      return { series: series, eac: fc.eac, cpi: fc.cpi };
+    }
+
+    function kpiClassFor(value){
+      if (value >= 0.95) return 'pm-kpi-good';
+      if (value >= 0.85) return 'pm-kpi-warn';
+      return 'pm-kpi-bad';
+    }
+
+    function fmtMoney(v){
+      return '$' + Math.round(v).toLocaleString() + 'k';
+    }
+
+    function buildOrUpdateChart(){
+      var todayIdx = parseInt(slider.value, 10);
+      todayLabel.textContent = 'Period ' + (todayIdx + 1) + ' of ' + PERIODS;
+
+      var evSeries = evFull.slice(0, todayIdx + 1);
+      var acSeries = acFull.slice(0, todayIdx + 1);
+      while (evSeries.length < PERIODS) evSeries.push(null);
+      while (acSeries.length < PERIODS) acSeries.push(null);
+
+      var fcResult = buildForecastSeries(todayIdx);
+
+      var spi = pv[todayIdx] > 0 ? evFull[todayIdx] / pv[todayIdx] : 1;
+      var cpi = fcResult.cpi;
+
+      var spiEl = document.getElementById('scKpiSpiVal');
+      var cpiEl = document.getElementById('scKpiCpiVal');
+      var acEl = document.getElementById('scKpiAc');
+      var eacEl = document.getElementById('scKpiEac');
+      spiEl.textContent = spi.toFixed(2);
+      cpiEl.textContent = cpi.toFixed(2);
+      acEl.textContent = fmtMoney(acFull[todayIdx]);
+      eacEl.textContent = fmtMoney(fcResult.eac);
+
+      var spiCard = document.getElementById('scKpiSpi');
+      var cpiCard = document.getElementById('scKpiCpi');
+      spiCard.className = 'pm-kpi ' + kpiClassFor(spi);
+      cpiCard.className = 'pm-kpi ' + kpiClassFor(cpi);
+
+      var c = readColors();
+
+      var datasets = [
+        {
+          label: 'PV (planned)',
+          data: pv,
+          borderColor: c.purple,
+          backgroundColor: c.purple,
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.35,
+          fill: false
+        },
+        {
+          label: 'EV (earned)',
+          data: evSeries,
+          borderColor: c.green,
+          backgroundColor: c.green,
+          borderWidth: 2,
+          pointRadius: 2,
+          tension: 0.35,
+          fill: false,
+          spanGaps: false
+        },
+        {
+          label: 'AC (actual cost)',
+          data: acSeries,
+          borderColor: c.red,
+          backgroundColor: c.red,
+          borderWidth: 2,
+          pointRadius: 2,
+          tension: 0.35,
+          fill: false,
+          spanGaps: false
+        },
+        {
+          label: 'Forecast (EAC)',
+          data: fcResult.series,
+          borderColor: c.amber,
+          backgroundColor: c.amber,
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 2,
+          tension: 0,
+          fill: false,
+          spanGaps: false
+        }
+      ];
+
+      var options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: c.axis, font: { size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: c.tooltipBg,
+            borderColor: c.tooltipBd,
+            borderWidth: 1,
+            titleColor: c.tooltipTx,
+            bodyColor: c.tooltipTx,
+            callbacks: {
+              label: function(ctx){
+                if (ctx.parsed.y === null || ctx.parsed.y === undefined) return null;
+                return ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.y);
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: c.grid },
+            ticks: { color: c.axis, font: { size: 11 } }
+          },
+          y: {
+            grid: { color: c.grid },
+            ticks: {
+              color: c.axis,
+              font: { size: 11 },
+              callback: function(v){ return '$' + v + 'k'; }
+            },
+            title: { display: true, text: 'Cumulative cost ($k)', color: c.axis, font: { size: 11 } }
+          }
+        }
+      };
+
+      if (!chart){
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: options
+        });
+      } else {
+        chart.data.labels = labels;
+        chart.data.datasets.forEach(function(ds, idx){
+          ds.data = datasets[idx].data;
+          ds.borderColor = datasets[idx].borderColor;
+          ds.backgroundColor = datasets[idx].backgroundColor;
+        });
+        chart.options = options;
+        chart.update();
+      }
+    }
+
+    slider.addEventListener('input', buildOrUpdateChart);
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      buildOrUpdateChart();
+    });
+
+    buildOrUpdateChart();
+  })();
+  </script>
 </body>
 </html>

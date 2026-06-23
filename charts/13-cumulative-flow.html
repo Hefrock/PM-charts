@@ -6,7 +6,7 @@
   <title>Cumulative flow diagram — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../assets/chart.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -16,6 +16,58 @@
       border-radius: var(--pm-radius-lg);
       padding: 20px;
       margin-bottom: 8px;
+    }
+    .cfd-chart-shell {
+      position: relative;
+      height: 300px;
+      margin-bottom: 16px;
+    }
+    .cfd-sim-panel {
+      background: var(--pm-surface-sub);
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      padding: 8px 14px;
+      margin-bottom: 14px;
+    }
+    .cfd-sim-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+      margin: 6px 0 2px;
+    }
+    .pm-slider-row label {
+      min-width: 110px;
+      color: var(--pm-tx-secondary);
+    }
+    .pm-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--pm-blue-400);
+    }
+    .pm-slider-row .cfd-slider-val {
+      min-width: 70px;
+      text-align: right;
+      font-weight: 500;
+      color: var(--pm-tx-primary);
+    }
+    .cfd-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .cfd-kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      opacity: .75;
+      margin-bottom: 4px;
+    }
+    .cfd-kpi-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    @media (max-width: 640px) {
+      .cfd-kpi-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -34,13 +86,41 @@
          Chart.js charts must read --pm-chart-* vars at runtime.
          ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 13: Cumulative flow diagram<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="cfd-chart-shell">
+        <canvas id="cfdCanvas" aria-label="Cumulative flow diagram of Backlog, In Progress, Review and Done" role="img"></canvas>
+      </div>
+
+      <div class="cfd-sim-panel">
+        <div class="cfd-sim-title">Simulator — daily throughput from today forward</div>
+        <div class="pm-slider-row">
+          <label for="cfdSlBacklog">Backlog→In Prog.</label>
+          <input type="range" id="cfdSlBacklog" min="0" max="8" step="1" value="3">
+          <span class="cfd-slider-val" id="cfdSlBacklogVal">3 / day</span>
+        </div>
+        <div class="pm-slider-row">
+          <label for="cfdSlProgress">In Prog.→Review</label>
+          <input type="range" id="cfdSlProgress" min="0" max="8" step="1" value="2">
+          <span class="cfd-slider-val" id="cfdSlProgressVal">2 / day</span>
+        </div>
+        <div class="pm-slider-row">
+          <label for="cfdSlReview">Review→Done</label>
+          <input type="range" id="cfdSlReview" min="0" max="8" step="1" value="3">
+          <span class="cfd-slider-val" id="cfdSlReviewVal">3 / day</span>
         </div>
       </div>
+
+      <div class="cfd-kpi-grid">
+        <div class="pm-kpi pm-kpi-info">
+          <div class="cfd-kpi-label">Current WIP (Backlog + In Prog. + Review)</div>
+          <div class="cfd-kpi-value" id="cfdKpiWip">—</div>
+        </div>
+        <div class="pm-kpi pm-kpi-info" id="cfdKpiCycleCard">
+          <div class="cfd-kpi-label">Estimated cycle time (Little's Law)</div>
+          <div class="cfd-kpi-value" id="cfdKpiCycle">—</div>
+        </div>
+      </div>
+
+      <div class="pm-insight" id="cfdTrendInsight" style="background:var(--pm-info-bg);color:var(--pm-info-tx);"></div>
     </div>
 
     <!-- Documentation -->
@@ -60,5 +140,260 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    var TOTAL_DAYS = 14;
+    var TODAY = 9; // index 0..13, "today" = day 10 (0-indexed 9), 4 days of projection remain
+
+    var labels = [];
+    for (var d = 1; d <= TOTAL_DAYS; d++) labels.push('Day ' + d);
+
+    // Historical cumulative counts (arrivals at or beyond each stage), days 1..14 (index 0..13).
+    // Backlog = items not yet started (cumulative arrived - cumulative started).
+    // We model cumulative "entered stage X or beyond" counts, all non-decreasing, Done <= Review <= InProgress <= Backlog(total arrived).
+    var historyArrived =    [30, 33, 35, 37, 38, 39, 40, 41, 42, 43]; // cumulative total arrived (top of stack)
+    var historyInProgress = [4, 8, 13, 17, 19, 21, 23, 25, 27, 29];
+    var historyReview =     [1, 3, 6, 9, 12, 14, 15, 16, 16, 16];
+    var historyDone =       [0, 1, 2, 4, 6, 8, 10, 12, 14, 16];
+
+    // historyArrived.length should equal TODAY+1 = 10
+    var sliders = {
+      backlog: document.getElementById('cfdSlBacklog'),
+      progress: document.getElementById('cfdSlProgress'),
+      review: document.getElementById('cfdSlReview')
+    };
+    var sliderVals = {
+      backlog: document.getElementById('cfdSlBacklogVal'),
+      progress: document.getElementById('cfdSlProgressVal'),
+      review: document.getElementById('cfdSlReviewVal')
+    };
+
+    var canvas = document.getElementById('cfdCanvas');
+    var chart = null;
+
+    function readColors(){
+      var css = getComputedStyle(document.documentElement);
+      return {
+        grid: css.getPropertyValue('--pm-chart-grid').trim(),
+        axis: css.getPropertyValue('--pm-chart-axis').trim(),
+        tooltipBg: css.getPropertyValue('--pm-chart-tooltip-bg').trim(),
+        tooltipBd: css.getPropertyValue('--pm-chart-tooltip-bd').trim(),
+        tooltipTx: css.getPropertyValue('--pm-chart-tooltip-tx').trim(),
+        gray: css.getPropertyValue('--pm-gray-400').trim(),
+        amber: css.getPropertyValue('--pm-amber-400').trim(),
+        blue: css.getPropertyValue('--pm-blue-400').trim(),
+        green: css.getPropertyValue('--pm-green-400').trim()
+      };
+    }
+
+    function projectForward(){
+      var backlogThroughput = parseInt(sliders.backlog.value, 10);
+      var progressThroughput = parseInt(sliders.progress.value, 10);
+      var reviewThroughput = parseInt(sliders.review.value, 10);
+
+      var arrived = historyArrived.slice();
+      var inProgress = historyInProgress.slice();
+      var review = historyReview.slice();
+      var done = historyDone.slice();
+
+      // Assume new arrivals continue at the recent average rate (last 3 days delta).
+      var arrivalDeltas = [];
+      for (var i = arrived.length - 3; i < arrived.length; i++){
+        if (i > 0) arrivalDeltas.push(arrived[i] - arrived[i - 1]);
+      }
+      var avgArrival = arrivalDeltas.length ? arrivalDeltas.reduce(function(a,b){return a+b;},0) / arrivalDeltas.length : 3;
+
+      var remainingDays = TOTAL_DAYS - arrived.length;
+      for (var d = 0; d < remainingDays; d++){
+        var lastArrived = arrived[arrived.length - 1];
+        var lastInProgress = inProgress[inProgress.length - 1];
+        var lastReview = review[review.length - 1];
+        var lastDone = done[done.length - 1];
+
+        var newArrived = Math.round(lastArrived + avgArrival);
+
+        // backlog available = arrived - inProgress(prev cumulative entered)
+        var backlogAvailable = Math.max(0, lastArrived - lastInProgress);
+        var moveToProgress = Math.min(backlogThroughput, backlogAvailable);
+        var newInProgress = lastInProgress + moveToProgress;
+
+        var progressAvailable = Math.max(0, lastInProgress - lastReview);
+        var moveToReview = Math.min(progressThroughput, progressAvailable);
+        var newReview = lastReview + moveToReview;
+
+        var reviewAvailable = Math.max(0, lastReview - lastDone);
+        var moveToDone = Math.min(reviewThroughput, reviewAvailable);
+        var newDone = lastDone + moveToDone;
+
+        arrived.push(newArrived);
+        inProgress.push(newInProgress);
+        review.push(newReview);
+        done.push(newDone);
+      }
+
+      return { arrived: arrived, inProgress: inProgress, review: review, done: done };
+    }
+
+    function fmtDays(v){
+      if (!isFinite(v) || v <= 0) return 'n/a';
+      return v.toFixed(1) + ' days';
+    }
+
+    function buildOrUpdateChart(){
+      sliderVals.backlog.textContent = sliders.backlog.value + ' / day';
+      sliderVals.progress.textContent = sliders.progress.value + ' / day';
+      sliderVals.review.textContent = sliders.review.value + ' / day';
+
+      var proj = projectForward();
+
+      // Stage band widths (non-cumulative-stack values for Chart.js stacked area):
+      // Backlog band = arrived - inProgress
+      // In Progress band = inProgress - review
+      // Review band = review - done
+      // Done band = done
+      var backlogBand = proj.arrived.map(function(v, i){ return Math.max(0, v - proj.inProgress[i]); });
+      var progressBand = proj.inProgress.map(function(v, i){ return Math.max(0, v - proj.review[i]); });
+      var reviewBand = proj.review.map(function(v, i){ return Math.max(0, v - proj.done[i]); });
+      var doneBand = proj.done.slice();
+
+      // Live KPIs based on the latest *historical* (today) day.
+      var lastIdx = historyArrived.length - 1; // today index
+      var wip = backlogBand[lastIdx] + progressBand[lastIdx] + reviewBand[lastIdx];
+      var throughput = parseInt(sliders.progress.value, 10); // In-Progress-stage throughput slider
+      var cycleTime = throughput > 0 ? wip / throughput : Infinity;
+
+      document.getElementById('cfdKpiWip').textContent = wip + ' items';
+      document.getElementById('cfdKpiCycle').textContent = fmtDays(cycleTime);
+
+      // Trend: compare In Progress band width over last 3 historical days.
+      var trendInsight = document.getElementById('cfdTrendInsight');
+      if (lastIdx >= 2){
+        var w0 = progressBand[lastIdx - 2];
+        var w1 = progressBand[lastIdx - 1];
+        var w2 = progressBand[lastIdx];
+        if (w2 > w1 && w1 > w0){
+          trendInsight.textContent = 'In Progress band has widened for 3 straight days (' + w0 + ' → ' + w1 + ' → ' + w2 + ') — signal of a bottleneck forming downstream of development.';
+          trendInsight.style.background = 'var(--pm-warn-bg)';
+          trendInsight.style.color = 'var(--pm-warn-tx)';
+        } else if (w2 < w1 && w1 < w0){
+          trendInsight.textContent = 'In Progress band has narrowed for 3 straight days (' + w0 + ' → ' + w1 + ' → ' + w2 + ') — possible starvation, the team may be running out of ready work.';
+          trendInsight.style.background = 'var(--pm-info-bg)';
+          trendInsight.style.color = 'var(--pm-info-tx)';
+        } else {
+          trendInsight.textContent = 'In Progress band width is stable over the last 3 days (' + w0 + ' → ' + w1 + ' → ' + w2 + ') — flow looks healthy.';
+          trendInsight.style.background = 'var(--pm-good-bg)';
+          trendInsight.style.color = 'var(--pm-good-tx)';
+        }
+      }
+
+      var c = readColors();
+
+      var datasets = [
+        {
+          label: 'Backlog',
+          data: backlogBand,
+          borderColor: c.gray,
+          backgroundColor: c.gray + '55',
+          fill: true,
+          stack: 'cfd',
+          pointRadius: 0,
+          borderWidth: 1.5,
+          tension: 0.2
+        },
+        {
+          label: 'In Progress',
+          data: progressBand,
+          borderColor: c.amber,
+          backgroundColor: c.amber + '55',
+          fill: true,
+          stack: 'cfd',
+          pointRadius: 0,
+          borderWidth: 1.5,
+          tension: 0.2
+        },
+        {
+          label: 'Review',
+          data: reviewBand,
+          borderColor: c.blue,
+          backgroundColor: c.blue + '55',
+          fill: true,
+          stack: 'cfd',
+          pointRadius: 0,
+          borderWidth: 1.5,
+          tension: 0.2
+        },
+        {
+          label: 'Done',
+          data: doneBand,
+          borderColor: c.green,
+          backgroundColor: c.green + '55',
+          fill: true,
+          stack: 'cfd',
+          pointRadius: 0,
+          borderWidth: 1.5,
+          tension: 0.2
+        }
+      ];
+
+      var options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: c.axis, font: { size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: c.tooltipBg,
+            borderColor: c.tooltipBd,
+            borderWidth: 1,
+            titleColor: c.tooltipTx,
+            bodyColor: c.tooltipTx
+          },
+          annotation: undefined
+        },
+        scales: {
+          x: {
+            grid: { color: c.grid },
+            ticks: { color: c.axis, font: { size: 10 } },
+            stacked: true
+          },
+          y: {
+            grid: { color: c.grid },
+            beginAtZero: true,
+            stacked: true,
+            ticks: { color: c.axis, font: { size: 11 } },
+            title: { display: true, text: 'Items', color: c.axis, font: { size: 11 } }
+          }
+        }
+      };
+
+      if (!chart){
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: options
+        });
+      } else {
+        chart.data.labels = labels;
+        chart.data.datasets = datasets;
+        chart.options = options;
+        chart.update();
+      }
+    }
+
+    sliders.backlog.addEventListener('input', buildOrUpdateChart);
+    sliders.progress.addEventListener('input', buildOrUpdateChart);
+    sliders.review.addEventListener('input', buildOrUpdateChart);
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+      buildOrUpdateChart();
+    });
+
+    buildOrUpdateChart();
+  })();
+  </script>
 </body>
 </html>

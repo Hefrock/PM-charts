@@ -33,25 +33,23 @@ Built as a visual reference and learning tool — fully interactive with simulat
 
 ## Hosting on GitHub Pages
 
-1. Upload the contents of this folder to a GitHub repository
-2. Go to Settings then Pages
-3. Set source to main branch, root folder
-4. Your site will be live at https://username.github.io/repo-name
+This repository is configured to publish from the `main` branch (root folder) via Settings then Pages.
+The site is live at https://hefrock.github.io/pm-charts/
 
 ## Development
 
-To add widget code to a chart page:
+All 15 charts have fully built, interactive widgets. To modify one:
 
 1. Open the relevant file in `charts/`
-2. Replace the placeholder div inside `.widget-wrap` with the widget HTML
+2. Edit the markup inside `.widget-wrap` and its inline `<script>` block
 3. All colours must use `--pm-*` CSS variables from `assets/styles.css`
-4. Chart.js is loaded from CDN — read grid and axis colours from CSS vars at runtime
+4. Chart.js is loaded locally from `assets/chart.min.js` — read grid and axis colours from CSS vars at runtime so charts re-theme on light/dark changes
 
 ## Assets
 
 - `assets/styles.css` — shared design token system, light and dark mode
 - `assets/nav.js` — shared navigation component with progress bar
-- `assets/chart.min.js` — Chart.js placeholder (replace with actual file or use CDN)
+- `assets/chart.min.js` — Chart.js v4.4.1 (minified UMD build), used by charts 02, 07, 09, 10, 11, 13 and 14
 
 ## Credits
 
