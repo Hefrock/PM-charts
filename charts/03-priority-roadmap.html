@@ -6,7 +6,6 @@
   <title>Priority roadmap — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,104 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    .pr-toolbar {
+      display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .pr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pr-sort { display: flex; align-items: center; gap: 6px; }
+    .pr-sort label { font-size: 11px; color: var(--pm-tx-tertiary); }
+
+    .pr-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .pr-card {
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      background: var(--pm-surface-sub);
+      overflow: hidden;
+      transition: border-color .12s;
+    }
+    .pr-card.self { border-color: var(--pm-border-strong); }
+
+    .pr-card-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .pr-card.self .pr-card-head { cursor: default; }
+
+    .pr-num {
+      flex: 0 0 auto;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border-strong);
+      color: var(--pm-tx-secondary);
+      font-size: 11px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pr-title { flex: 1 1 auto; font-size: 13px; font-weight: 500; color: var(--pm-tx-primary); }
+    .pr-meta { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+
+    .pr-tag {
+      font-size: 10px; font-weight: 600;
+      padding: 3px 8px;
+      border-radius: var(--pm-radius-pill);
+      border: 0.5px solid transparent;
+      white-space: nowrap;
+    }
+    .pr-tag-freq, .pr-tag-impact {
+      font-size: 10px; font-weight: 500;
+      padding: 3px 8px;
+      border-radius: var(--pm-radius-pill);
+      background: var(--pm-surface);
+      border: 0.5px solid var(--pm-border);
+      color: var(--pm-tx-secondary);
+      white-space: nowrap;
+    }
+
+    .pr-chevron {
+      flex: 0 0 auto;
+      font-size: 12px;
+      color: var(--pm-tx-tertiary);
+      transition: transform .15s;
+    }
+    .pr-card.open .pr-chevron { transform: rotate(90deg); }
+
+    .pr-card-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .18s ease;
+    }
+    .pr-card.open .pr-card-body { max-height: 260px; }
+    .pr-card-body-inner {
+      padding: 0 12px 14px 46px;
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+      line-height: 1.6;
+    }
+    .pr-card-body-inner p { margin: 0 0 8px; }
+    .pr-card-body-inner strong { color: var(--pm-tx-primary); font-weight: 500; }
+    .pr-build-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 12px; font-weight: 500;
+      color: var(--pm-tools-tx);
+      text-decoration: none;
+    }
+    .pr-build-link:hover { text-decoration: underline; }
+    .pr-build-disabled {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--pm-tx-tertiary);
+      font-style: italic;
+    }
+
+    .pr-card.hidden { display: none; }
   </style>
 </head>
 <body>
@@ -26,21 +123,15 @@
     <h1 class="chart-title">Priority roadmap</h1>
     <p class="chart-subtitle">All 15 charts ranked by frequency and impact.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 03: Priority roadmap<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="pr-toolbar">
+        <div class="pr-chips" id="prChips" role="group" aria-label="Filter by category"></div>
+        <div class="pr-sort">
+          <label for="prSortToggle">Sort:</label>
+          <button type="button" class="pm-tab-btn on" id="prSortToggle" data-mode="number">By chart #</button>
         </div>
       </div>
+      <div class="pr-list" id="prList"></div>
     </div>
 
     <!-- Documentation -->
@@ -60,5 +151,214 @@
     </div>
 
   </div>
+  <script>
+  (function(){
+    var CAT_TOKEN = {
+      Schedule:  'people',
+      Risk:      'bad',
+      People:    'env',
+      Finance:   'mat',
+      Reference: 'process'
+    };
+
+    var CHARTS = [
+      {n:1,  title:'Gantt chart',                file:'01-gantt.html',            cat:'Schedule',  freq:'Daily',   impact:'High',   use:'Use to track timeline, dependencies and the critical path.', miss:"Most PMs skip baselining, so they can't measure variance later."},
+      {n:2,  title:'S-Curve',                     file:'02-s-curve.html',          cat:'Schedule',  freq:'Weekly',  impact:'High',   use:'Use to show cumulative cost and schedule health at a glance.', miss:'Often shown with only one line instead of all three (PV/EV/AC).'},
+      {n:3,  title:'Priority roadmap',            file:'03-priority-roadmap.html', cat:'Reference', freq:'Rarely',  impact:'Medium', use:'Use as a master guide to which chart fits which conversation.', miss:'Most PMs know Gantt/RACI but skip EVM, Tornado and Control charts.', self:true},
+      {n:4,  title:'Risk matrix',                 file:'04-risk-matrix.html',      cat:'Risk',      freq:'Weekly',  impact:'High',   use:'Use to score probability x impact and assign response strategies.', miss:'Risks get scored once at kickoff and never updated.'},
+      {n:5,  title:'Critical path',               file:'05-critical-path.html',    cat:'Schedule',  freq:'Weekly',  impact:'High',   use:"Use to find which tasks truly can't slip without delaying the end date.", miss:'Float erodes during execution — recalculate weekly, not just at kickoff.'},
+      {n:6,  title:'Stakeholder grid',             file:'06-stakeholder-grid.html', cat:'People',    freq:'Monthly', impact:'Medium', use:'Use to map power vs interest into an engagement plan.', miss:'Mapped once at kickoff, then filed away and never updated.'},
+      {n:7,  title:'Burn-down chart',             file:'07-burn-down.html',        cat:'Schedule',  freq:'Daily',   impact:'High',   use:'Use to track sprint progress and catch bottlenecks early.', miss:"A flat burn-down on day 1-2 looks harmless; by day 3 it's a crisis."},
+      {n:8,  title:'RACI matrix',                 file:'08-raci-matrix.html',      cat:'People',    freq:'Weekly',  impact:'High',   use:'Use to assign clear accountability across tasks and roles.', miss:"Two A's on one row destroys accountability."},
+      {n:9,  title:'Resource histogram',          file:'09-resource-histogram.html',cat:'People',   freq:'Weekly',  impact:'Medium', use:'Use to spot over-allocation before it causes burnout.', miss:'Plans get built without checking if people are above 100% loaded.'},
+      {n:10, title:'EVM curves',                  file:'10-evm-curves.html',       cat:'Finance',   freq:'Monthly', impact:'High',   use:'Use to show schedule and cost performance in one financial view.', miss:'EV is misread as "money spent" instead of value of completed work.'},
+      {n:11, title:'Pareto chart',                file:'11-pareto-chart.html',     cat:'Finance',   freq:'Rarely',  impact:'Medium', use:'Use to find the 20% of causes driving 80% of the problems.', miss:'Teams spread effort across every cause instead of just the top few.'},
+      {n:12, title:'Tornado diagram',             file:'12-tornado-diagram.html',  cat:'Risk',      freq:'Rarely',  impact:'High',   use:'Use to rank risk impact for budget and contingency conversations.', miss:'Built once for the business case, never revisited mid-project.'},
+      {n:13, title:'Cumulative flow diagram',     file:'13-cumulative-flow.html',  cat:'Schedule',  freq:'Weekly',  impact:'Medium', use:'Use to see where work is piling up in the workflow.', miss:'Only reviewed in retrospectives, after the damage is done.'},
+      {n:14, title:'Control chart',               file:'14-control-chart.html',    cat:'Risk',      freq:'Weekly',  impact:'High',   use:'Use to separate real problems from normal variation.', miss:"Every data point gets reacted to as if it's significant."},
+      {n:15, title:'Fishbone diagram',            file:'15-fishbone.html',         cat:'Reference', freq:'Rarely',  impact:'Medium', use:'Use for structured root-cause analysis in retrospectives.', miss:'People/Process bones fill up while Tools/Environment stay empty.'}
+    ];
+
+    var IMPACT_RANK = { High: 3, Medium: 2, Low: 1 };
+    var CATS = ['Schedule', 'Risk', 'People', 'Finance', 'Reference'];
+
+    var state = {
+      activeCats: new Set(CATS),
+      sortMode: 'number', // 'number' | 'impact'
+      openCard: null
+    };
+
+    var listEl = document.getElementById('prList');
+    var chipsEl = document.getElementById('prChips');
+    var sortBtn = document.getElementById('prSortToggle');
+
+    function chipVars(cat){
+      var token = CAT_TOKEN[cat];
+      return {
+        bg: 'var(--pm-' + token + '-bg)',
+        bd: 'var(--pm-' + token + '-bd)',
+        tx: 'var(--pm-' + token + '-tx)'
+      };
+    }
+
+    function buildChips(){
+      chipsEl.innerHTML = '';
+      CATS.forEach(function(cat){
+        var v = chipVars(cat);
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'pm-chip';
+        chip.dataset.cat = cat;
+        chip.textContent = cat;
+        chip.style.background = v.bg;
+        chip.style.borderColor = v.bd;
+        chip.style.color = v.tx;
+        chip.addEventListener('click', function(){
+          if (state.activeCats.has(cat)) {
+            state.activeCats.delete(cat);
+          } else {
+            state.activeCats.add(cat);
+          }
+          renderChips();
+          renderList();
+        });
+        chipsEl.appendChild(chip);
+      });
+      renderChips();
+    }
+
+    function renderChips(){
+      Array.prototype.forEach.call(chipsEl.children, function(chip){
+        var on = state.activeCats.has(chip.dataset.cat);
+        chip.style.opacity = on ? '1' : '.4';
+      });
+    }
+
+    function sortedCharts(){
+      var arr = CHARTS.slice();
+      if (state.sortMode === 'impact') {
+        arr.sort(function(a, b){
+          var diff = IMPACT_RANK[b.impact] - IMPACT_RANK[a.impact];
+          return diff !== 0 ? diff : a.n - b.n;
+        });
+      } else {
+        arr.sort(function(a, b){ return a.n - b.n; });
+      }
+      return arr;
+    }
+
+    function renderList(){
+      var arr = sortedCharts();
+      listEl.innerHTML = '';
+      arr.forEach(function(chart){
+        var visible = state.activeCats.has(chart.cat);
+        var v = chipVars(chart.cat);
+
+        var card = document.createElement('div');
+        card.className = 'pr-card' + (chart.self ? ' self' : '') + (visible ? '' : ' hidden') + (state.openCard === chart.n ? ' open' : '');
+
+        var head = document.createElement('div');
+        head.className = 'pr-card-head';
+        head.setAttribute('role', 'button');
+        head.setAttribute('tabindex', '0');
+        head.setAttribute('aria-expanded', state.openCard === chart.n ? 'true' : 'false');
+
+        var num = document.createElement('div');
+        num.className = 'pr-num';
+        num.textContent = chart.n;
+
+        var title = document.createElement('div');
+        title.className = 'pr-title';
+        title.textContent = chart.title + (chart.self ? ' (this chart)' : '');
+
+        var meta = document.createElement('div');
+        meta.className = 'pr-meta';
+
+        var tag = document.createElement('span');
+        tag.className = 'pr-tag';
+        tag.textContent = chart.cat;
+        tag.style.background = v.bg;
+        tag.style.borderColor = v.bd;
+        tag.style.color = v.tx;
+
+        var freq = document.createElement('span');
+        freq.className = 'pr-tag-freq';
+        freq.textContent = chart.freq;
+
+        var impact = document.createElement('span');
+        impact.className = 'pr-tag-impact';
+        impact.textContent = chart.impact + ' impact';
+
+        meta.appendChild(tag);
+        meta.appendChild(freq);
+        meta.appendChild(impact);
+
+        var chevron = document.createElement('i');
+        chevron.className = 'ti ti-chevron-right pr-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+
+        head.appendChild(num);
+        head.appendChild(title);
+        head.appendChild(meta);
+        head.appendChild(chevron);
+
+        var body = document.createElement('div');
+        body.className = 'pr-card-body';
+        var inner = document.createElement('div');
+        inner.className = 'pr-card-body-inner';
+
+        var pUse = document.createElement('p');
+        pUse.innerHTML = '<strong>When to use:</strong> ' + chart.use;
+        var pMiss = document.createElement('p');
+        pMiss.innerHTML = '<strong>What most PMs miss:</strong> ' + chart.miss;
+
+        inner.appendChild(pUse);
+        inner.appendChild(pMiss);
+
+        if (chart.self) {
+          var disabled = document.createElement('span');
+          disabled.className = 'pr-build-disabled';
+          disabled.textContent = "You're already here.";
+          inner.appendChild(disabled);
+        } else {
+          var link = document.createElement('a');
+          link.className = 'pr-build-link';
+          link.href = chart.file;
+          link.textContent = 'Build this chart →';
+          inner.appendChild(link);
+        }
+
+        body.appendChild(inner);
+        card.appendChild(head);
+        card.appendChild(body);
+        listEl.appendChild(card);
+
+        if (!chart.self) {
+          head.addEventListener('click', function(){ toggleCard(chart.n); });
+          head.addEventListener('keydown', function(e){
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleCard(chart.n);
+            }
+          });
+        }
+      });
+    }
+
+    function toggleCard(n){
+      state.openCard = (state.openCard === n) ? null : n;
+      renderList();
+    }
+
+    sortBtn.addEventListener('click', function(){
+      state.sortMode = (state.sortMode === 'number') ? 'impact' : 'number';
+      sortBtn.textContent = (state.sortMode === 'number') ? 'By chart #' : 'By impact';
+      renderList();
+    });
+
+    buildChips();
+    renderList();
+  })();
+  </script>
 </body>
 </html>

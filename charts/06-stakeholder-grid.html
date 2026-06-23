@@ -6,7 +6,6 @@
   <title>Stakeholder grid — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,135 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    /* Stakeholder grid widget */
+    .sh-layout {
+      display: flex; gap: 18px; flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .sh-plot-area {
+      display: flex; gap: 6px;
+    }
+    .sh-yaxis-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-align: center;
+      font-size: 10px;
+      color: var(--pm-tx-tertiary);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      padding: 4px 0;
+    }
+    .sh-plot-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .sh-plot {
+      position: relative;
+      width: 380px;
+      height: 320px;
+      border-radius: var(--pm-radius-md);
+      border: 0.5px solid var(--pm-border-strong);
+      touch-action: none;
+      overflow: hidden;
+    }
+    .sh-quadrant {
+      position: absolute;
+      width: 50%; height: 50%;
+      display: flex; align-items: flex-start;
+      padding: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.4;
+      box-sizing: border-box;
+    }
+    .sh-quadrant span { font-weight: 400; font-size: 9px; display: block; color: var(--pm-tx-tertiary); }
+    .sh-q-tr { top: 0; left: 50%; background: var(--pm-bad-bg); color: var(--pm-bad-tx); justify-content: flex-end; text-align: right; }
+    .sh-q-tl { top: 0; left: 0; background: var(--pm-warn-bg); color: var(--pm-warn-tx); }
+    .sh-q-br { bottom: 0; left: 50%; background: var(--pm-info-bg); color: var(--pm-info-tx); justify-content: flex-end; text-align: right; }
+    .sh-q-bl { bottom: 0; left: 0; background: var(--pm-good-bg); color: var(--pm-good-tx); }
+    .sh-midline-v, .sh-midline-h {
+      position: absolute;
+      background: var(--pm-border-strong);
+      z-index: 1;
+    }
+    .sh-midline-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+    .sh-midline-h { left: 0; right: 0; top: 50%; height: 1px; }
+    .sh-xaxis {
+      display: flex; justify-content: space-between;
+      width: 380px;
+      font-size: 9px; color: var(--pm-tx-tertiary);
+      padding: 0 2px;
+    }
+    .sh-xaxis-label {
+      text-align: center;
+      font-size: 10px;
+      color: var(--pm-tx-tertiary);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .sh-dot {
+      position: absolute;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700;
+      color: #fff;
+      border: 2px solid var(--pm-surface);
+      cursor: grab;
+      touch-action: none;
+      z-index: 5;
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
+      user-select: none;
+    }
+    .sh-dot.is-dragging { cursor: grabbing; z-index: 9; }
+    .sh-dot.is-selected { outline: 2px solid var(--pm-coral-400); outline-offset: 2px; }
+    .sh-dot-quad-tag {
+      position: absolute;
+      transform: translate(-50%, 4px);
+      top: 100%;
+      font-size: 8px;
+      font-weight: 600;
+      color: var(--pm-tx-secondary);
+      background: var(--pm-surface);
+      padding: 1px 5px;
+      border-radius: var(--pm-radius-pill);
+      border: 0.5px solid var(--pm-border);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .sh-legend {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 10px;
+      font-size: 10px;
+      color: var(--pm-tx-tertiary);
+    }
+    .sh-legend-item { display: flex; align-items: center; gap: 4px; }
+    .sh-legend-swatch {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: inline-block;
+    }
+
+    .sh-panel {
+      flex: 1; min-width: 220px;
+      background: var(--pm-surface-sub);
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+      min-height: 90px;
+    }
+    .sh-panel strong { color: var(--pm-tx-primary); }
+    .sh-panel-cadence {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 10px;
+      border-radius: var(--pm-radius-pill);
+      font-size: 11px; font-weight: 600;
+      background: var(--pm-info-bg); color: var(--pm-info-tx);
+    }
   </style>
 </head>
 <body>
@@ -26,21 +154,27 @@
     <h1 class="chart-title">Stakeholder grid</h1>
     <p class="chart-subtitle">Power and interest mapped to engagement strategies.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 06: Stakeholder grid<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="sh-layout">
+        <div class="sh-plot-area">
+          <div class="sh-yaxis-label">Power</div>
+          <div class="sh-plot-wrap">
+            <div class="sh-plot" id="shPlot">
+              <div class="sh-quadrant sh-q-tr">Manage closely<span>weekly</span></div>
+              <div class="sh-quadrant sh-q-tl">Keep satisfied<span>monthly</span></div>
+              <div class="sh-quadrant sh-q-br">Keep informed<span>fortnightly</span></div>
+              <div class="sh-quadrant sh-q-bl">Monitor<span>quarterly</span></div>
+              <div class="sh-midline-v"></div>
+              <div class="sh-midline-h"></div>
+            </div>
+            <div class="sh-xaxis"><span>Low</span><span>Interest</span><span>High</span></div>
+          </div>
         </div>
+
+        <div class="sh-panel" id="shPanel">Drag or click a stakeholder dot to see details.</div>
       </div>
+
+      <div class="sh-legend" id="shLegend"></div>
     </div>
 
     <!-- Documentation -->
@@ -60,5 +194,183 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    var PLOT_W = 380;
+    var PLOT_H = 320;
+
+    var sentimentColorVar = {
+      champion: '--pm-good-bd',
+      supporter: '--pm-good-bd',
+      neutral: '--pm-info-bd',
+      skeptic: '--pm-warn-bd',
+      blocker: '--pm-bad-bd'
+    };
+    var sentimentLabel = {
+      champion: 'Champion', supporter: 'Supporter', neutral: 'Neutral',
+      skeptic: 'Skeptic', blocker: 'Blocker'
+    };
+
+    var stakeholders = [
+      { id:'s1',  name:'Lena Ortiz',     label:'LO', sentiment:'champion',  power:88, interest:90 },
+      { id:'s2',  name:'Marcus Webb',     label:'MW', sentiment:'blocker',   power:82, interest:78 },
+      { id:'s3',  name:'Priya Nair',      label:'PN', sentiment:'supporter', power:70, interest:85 },
+      { id:'s4',  name:'CFO Office',      label:'CF', sentiment:'neutral',   power:80, interest:25 },
+      { id:'s5',  name:'Dana Kim',        label:'DK', sentiment:'supporter', power:30, interest:82 },
+      { id:'s6',  name:'Tom Reyes',       label:'TR', sentiment:'skeptic',   power:60, interest:55 },
+      { id:'s7',  name:'Field Ops Team',  label:'FO', sentiment:'neutral',   power:22, interest:30 },
+      { id:'s8',  name:'Legal Counsel',   label:'LC', sentiment:'neutral',   power:75, interest:20 },
+      { id:'s9',  name:'External Auditor',label:'EA', sentiment:'skeptic',   power:40, interest:40 },
+      { id:'s10', name:'Help Desk Lead',  label:'HD', sentiment:'supporter', power:18, interest:65 }
+    ];
+
+    var selectedId = null;
+
+    var plotEl = document.getElementById('shPlot');
+    var panelEl = document.getElementById('shPanel');
+    var legendEl = document.getElementById('shLegend');
+
+    function quadrantOf(power, interest){
+      var highPower = power >= 50;
+      var highInterest = interest >= 50;
+      if (highPower && highInterest) return { name:'Manage closely', cadence:'weekly' };
+      if (highPower && !highInterest) return { name:'Keep satisfied', cadence:'monthly' };
+      if (!highPower && highInterest) return { name:'Keep informed', cadence:'fortnightly' };
+      return { name:'Monitor', cadence:'quarterly' };
+    }
+
+    function pctToPx(power, interest){
+      return {
+        x: (interest / 100) * PLOT_W,
+        y: PLOT_H - (power / 100) * PLOT_H
+      };
+    }
+
+    function buildLegend(){
+      legendEl.innerHTML = '';
+      Object.keys(sentimentLabel).forEach(function(key){
+        var item = document.createElement('span');
+        item.className = 'sh-legend-item';
+        var swatch = document.createElement('span');
+        swatch.className = 'sh-legend-swatch';
+        swatch.style.background = 'var(' + sentimentColorVar[key] + ')';
+        item.appendChild(swatch);
+        item.appendChild(document.createTextNode(sentimentLabel[key]));
+        legendEl.appendChild(item);
+      });
+    }
+
+    var dotEls = {};
+    var tagEls = {};
+
+    function renderDots(){
+      stakeholders.forEach(function(s){
+        var dot = dotEls[s.id];
+        if (!dot) {
+          dot = document.createElement('div');
+          dot.className = 'sh-dot';
+          dot.dataset.id = s.id;
+          dot.style.touchAction = 'none';
+          dot.textContent = s.label;
+          dot.title = s.name;
+          attachDrag(dot, s);
+          dot.addEventListener('click', function(ev){
+            ev.stopPropagation();
+            selectStakeholder(s.id);
+          });
+          plotEl.appendChild(dot);
+          dotEls[s.id] = dot;
+
+          var newTag = document.createElement('div');
+          newTag.className = 'sh-dot-quad-tag';
+          newTag.style.display = 'none';
+          plotEl.appendChild(newTag);
+          tagEls[s.id] = newTag;
+        }
+        dot.style.background = 'var(' + sentimentColorVar[s.sentiment] + ')';
+        dot.classList.toggle('is-selected', s.id === selectedId);
+        var pos = pctToPx(s.power, s.interest);
+        dot.style.left = pos.x + 'px';
+        dot.style.top = pos.y + 'px';
+
+        var tag = tagEls[s.id];
+        if (s.id === selectedId) {
+          var q = quadrantOf(s.power, s.interest);
+          tag.textContent = q.name;
+          tag.style.left = pos.x + 'px';
+          tag.style.top = pos.y + 'px';
+          tag.style.display = 'block';
+        } else {
+          tag.style.display = 'none';
+        }
+      });
+    }
+
+    function attachDrag(dot, stakeholder){
+      var dragging = false;
+      var plotRect = null;
+
+      dot.addEventListener('pointerdown', function(ev){
+        dot.setPointerCapture(ev.pointerId);
+        dragging = true;
+        dot.classList.add('is-dragging');
+        plotRect = plotEl.getBoundingClientRect();
+        selectStakeholder(stakeholder.id);
+        ev.preventDefault();
+      });
+
+      dot.addEventListener('pointermove', function(ev){
+        if (!dragging) return;
+        var x = ev.clientX - plotRect.left;
+        var y = ev.clientY - plotRect.top;
+        x = Math.max(0, Math.min(PLOT_W, x));
+        y = Math.max(0, Math.min(PLOT_H, y));
+        dot.style.left = x + 'px';
+        dot.style.top = y + 'px';
+        var tag = tagEls[stakeholder.id];
+        var q = quadrantOf(100 - (y / PLOT_H) * 100, (x / PLOT_W) * 100);
+        tag.textContent = q.name;
+        tag.style.left = x + 'px';
+        tag.style.top = y + 'px';
+        tag.style.display = 'block';
+      });
+
+      function finishDrag(ev){
+        if (!dragging) return;
+        dragging = false;
+        dot.classList.remove('is-dragging');
+        var x = parseFloat(dot.style.left);
+        var y = parseFloat(dot.style.top);
+        stakeholder.interest = Math.round((x / PLOT_W) * 100);
+        stakeholder.power = Math.round(100 - (y / PLOT_H) * 100);
+        selectStakeholder(stakeholder.id);
+      }
+
+      dot.addEventListener('pointerup', finishDrag);
+      dot.addEventListener('pointercancel', finishDrag);
+    }
+
+    function selectStakeholder(id){
+      selectedId = id;
+      var s = stakeholders.filter(function(x){ return x.id === id; })[0];
+      if (!s) return;
+      var q = quadrantOf(s.power, s.interest);
+      panelEl.innerHTML = '<strong>' + escapeHtml(s.name) + '</strong> &middot; ' + sentimentLabel[s.sentiment] +
+        '<br>Quadrant: <strong>' + q.name + '</strong>' +
+        '<br><span class="sh-panel-cadence">Engage ' + q.cadence + '</span>';
+      renderDots();
+    }
+
+    function escapeHtml(str){
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    buildLegend();
+    renderDots();
+  })();
+  </script>
 </body>
 </html>

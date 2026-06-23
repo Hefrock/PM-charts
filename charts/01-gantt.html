@@ -6,7 +6,6 @@
   <title>Gantt chart — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,146 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    /* Gantt widget */
+    .gantt-filters {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 0.5px solid var(--pm-border);
+    }
+    .gantt-filter-group {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+      padding-right: 10px;
+    }
+    .gantt-filter-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+      color: var(--pm-tx-tertiary); margin-right: 2px;
+    }
+    .gantt-scroll { overflow-x: auto; }
+    .gantt-grid {
+      display: grid;
+      grid-template-columns: 168px 1fr;
+      min-width: 720px;
+    }
+    .gantt-head-row { display: contents; }
+    .gantt-head-spacer {
+      border-bottom: 0.5px solid var(--pm-border);
+    }
+    .gantt-weeks {
+      position: relative;
+      display: grid;
+      border-bottom: 0.5px solid var(--pm-border);
+      padding-bottom: 4px;
+    }
+    .gantt-week-num {
+      font-size: 9px; color: var(--pm-tx-tertiary);
+      text-align: center;
+      border-left: 0.5px solid var(--pm-border);
+    }
+    .gantt-row { display: contents; }
+    .gantt-row-name {
+      font-size: 11px; color: var(--pm-tx-primary);
+      padding: 6px 8px 6px 0;
+      display: flex; align-items: center;
+      border-bottom: 0.5px solid var(--pm-border);
+      white-space: nowrap;
+    }
+    .gantt-row-name.is-critical { font-weight: 700; }
+    .gantt-row-name .gantt-star { color: var(--pm-bad-bd); margin-right: 4px; }
+    .gantt-row-name .gantt-phase-tag {
+      font-size: 9px; color: var(--pm-tx-tertiary); margin-left: 6px; font-weight: 400;
+    }
+    .gantt-track {
+      position: relative;
+      border-bottom: 0.5px solid var(--pm-border);
+      min-height: 28px;
+    }
+    .gantt-bar {
+      position: absolute;
+      top: 5px; bottom: 5px;
+      border-radius: var(--pm-radius-sm);
+      border: 0.5px solid transparent;
+      cursor: pointer;
+      display: flex; align-items: center;
+      padding: 0 6px;
+      font-size: 10px;
+      font-weight: 500;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: filter .1s, outline .1s;
+    }
+    .gantt-bar:hover, .gantt-bar.is-selected {
+      outline: 2px solid var(--pm-coral-400);
+      outline-offset: 1px;
+      z-index: 3;
+    }
+    .gantt-bar.is-predecessor {
+      outline: 2px dashed var(--pm-tools-bd);
+      outline-offset: 1px;
+      z-index: 2;
+    }
+    .gantt-bar.status-done   { background: var(--pm-good-bg); color: var(--pm-good-tx); border-color: var(--pm-good-bd); }
+    .gantt-bar.status-progress { background: var(--pm-info-bg); color: var(--pm-info-tx); border-color: var(--pm-info-bd); }
+    .gantt-bar.status-notstarted { background: var(--pm-surface-sub); color: var(--pm-tx-secondary); border-color: var(--pm-border-strong); }
+    .gantt-bar.status-atrisk { background: var(--pm-bad-bg); color: var(--pm-bad-tx); border-color: var(--pm-bad-bd); }
+
+    .gantt-milestone {
+      position: absolute;
+      top: 50%; width: 14px; height: 14px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      background: var(--pm-warn-bd);
+      border: 0.5px solid var(--pm-warn-tx);
+      cursor: pointer;
+      z-index: 3;
+    }
+    .gantt-milestone.is-selected, .gantt-milestone:hover {
+      outline: 2px solid var(--pm-coral-400);
+      outline-offset: 2px;
+    }
+
+    .gantt-today-line {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: var(--pm-bad-bd);
+      z-index: 4;
+      pointer-events: none;
+    }
+    .gantt-today-label {
+      position: absolute;
+      top: -16px;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--pm-bad-bd);
+      transform: translateX(-50%);
+      white-space: nowrap;
+      z-index: 4;
+    }
+
+    .gantt-status-strip {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: var(--pm-radius-md);
+      background: var(--pm-surface-sub);
+      border: 0.5px solid var(--pm-border);
+      font-size: 11px;
+      color: var(--pm-tx-secondary);
+      min-height: 20px;
+    }
+    .gantt-status-strip strong { color: var(--pm-tx-primary); }
+    .gantt-legend {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      margin-top: 10px;
+      font-size: 10px;
+      color: var(--pm-tx-tertiary);
+    }
+    .gantt-legend-item { display: flex; align-items: center; gap: 4px; }
+    .gantt-legend-swatch {
+      width: 10px; height: 10px; border-radius: 3px;
+      display: inline-block;
+      border: 0.5px solid var(--pm-border-strong);
+    }
   </style>
 </head>
 <body>
@@ -26,21 +165,37 @@
     <h1 class="chart-title">Gantt chart</h1>
     <p class="chart-subtitle">Timeline, dependencies and critical path in one view.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 01: Gantt chart<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="gantt-filters" id="ganttFilters">
+        <div class="gantt-filter-group" id="ganttFilterPhase">
+          <span class="gantt-filter-label">Phase</span>
+        </div>
+        <div class="gantt-filter-group" id="ganttFilterOwner">
+          <span class="gantt-filter-label">Owner</span>
+        </div>
+        <div class="gantt-filter-group" id="ganttFilterStatus">
+          <span class="gantt-filter-label">Status</span>
         </div>
       </div>
+
+      <div class="gantt-scroll">
+        <div class="gantt-grid" id="ganttGrid">
+          <!-- header row -->
+          <div class="gantt-row-name gantt-head-spacer"></div>
+          <div class="gantt-weeks" id="ganttWeeks"></div>
+          <!-- task rows injected by JS -->
+        </div>
+      </div>
+
+      <div class="gantt-legend">
+        <span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:var(--pm-good-bg);border-color:var(--pm-good-bd)"></span>Done</span>
+        <span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:var(--pm-info-bg);border-color:var(--pm-info-bd)"></span>In progress</span>
+        <span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:var(--pm-surface-sub);border-color:var(--pm-border-strong)"></span>Not started</span>
+        <span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:var(--pm-bad-bg);border-color:var(--pm-bad-bd)"></span>At risk</span>
+        <span class="gantt-legend-item"><span class="gantt-legend-swatch" style="background:var(--pm-warn-bd);transform:rotate(45deg)"></span>Milestone</span>
+      </div>
+
+      <div class="gantt-status-strip" id="ganttStatusStrip">Click or hover a bar to see its dependencies and critical-path context.</div>
     </div>
 
     <!-- Documentation -->
@@ -60,5 +215,227 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    var TOTAL_WEEKS = 16;
+    var TODAY_WEEK = 9;
+
+    var tasks = [
+      { id:'t1',  name:'Charter sign-off',        phase:'Initiation', owner:'Maya',  status:'done',       start:1,  end:2,  deps:[],        critical:true,  milestone:false },
+      { id:'t2',  name:'Stakeholder register',    phase:'Initiation', owner:'Jon',   status:'done',       start:1,  end:3,  deps:[],        critical:false, milestone:false },
+      { id:'t3',  name:'Kickoff complete',        phase:'Initiation', owner:'Maya',  status:'done',       start:3,  end:3,  deps:['t1','t2'], critical:true, milestone:true },
+      { id:'t4',  name:'Requirements gathering',  phase:'Planning',   owner:'Priya', status:'done',       start:3,  end:5,  deps:['t3'],    critical:true,  milestone:false },
+      { id:'t5',  name:'Scope baseline',          phase:'Planning',   owner:'Priya', status:'done',       start:5,  end:6,  deps:['t4'],    critical:true,  milestone:false },
+      { id:'t6',  name:'Resource plan',           phase:'Planning',   owner:'Jon',   status:'done',       start:5,  end:7,  deps:['t4'],    critical:false, milestone:false },
+      { id:'t7',  name:'Budget approval',         phase:'Planning',   owner:'Maya',  status:'in-progress',start:6,  end:8,  deps:['t5'],    critical:true,  milestone:false },
+      { id:'t8',  name:'Design build',           phase:'Execution',  owner:'Sam',   status:'in-progress',start:8,  end:11, deps:['t7'],    critical:true,  milestone:false },
+      { id:'t9',  name:'Vendor procurement',      phase:'Execution',  owner:'Priya', status:'at-risk',    start:7,  end:10, deps:['t6'],    critical:false, milestone:false },
+      { id:'t10', name:'Core development',        phase:'Execution',  owner:'Sam',   status:'not-started',start:11, end:14, deps:['t8'],    critical:true,  milestone:false },
+      { id:'t11', name:'QA testing',              phase:'Execution',  owner:'Devon', status:'not-started',start:13, end:15, deps:['t9','t10'], critical:true, milestone:false },
+      { id:'t12', name:'UAT sign-off',             phase:'Execution',  owner:'Maya',  status:'not-started',start:15, end:15, deps:['t11'],   critical:true,  milestone:true },
+      { id:'t13', name:'Deployment',               phase:'Closeout',   owner:'Sam',   status:'not-started',start:15, end:16, deps:['t12'],   critical:true,  milestone:false },
+      { id:'t14', name:'Lessons learned',          phase:'Closeout',   owner:'Jon',   status:'not-started',start:16, end:16, deps:['t13'],   critical:false, milestone:true }
+    ];
+
+    var taskById = {};
+    tasks.forEach(function(t){ taskById[t.id] = t; });
+
+    var statusLabels = { 'done':'Done', 'in-progress':'In progress', 'not-started':'Not started', 'at-risk':'At risk' };
+    var statusClass = { 'done':'status-done', 'in-progress':'status-progress', 'not-started':'status-notstarted', 'at-risk':'status-atrisk' };
+
+    var phases = uniq(tasks.map(function(t){ return t.phase; }));
+    var owners = uniq(tasks.map(function(t){ return t.owner; }));
+    var statuses = uniq(tasks.map(function(t){ return t.status; }));
+
+    function uniq(arr){
+      var out = [];
+      arr.forEach(function(v){ if (out.indexOf(v) === -1) out.push(v); });
+      return out;
+    }
+
+    var activeFilters = { phase:null, owner:null, status:null };
+    var selectedTaskId = null;
+
+    var grid = document.getElementById('ganttGrid');
+    var weeksHead = document.getElementById('ganttWeeks');
+    var statusStrip = document.getElementById('ganttStatusStrip');
+    var filterPhase = document.getElementById('ganttFilterPhase');
+    var filterOwner = document.getElementById('ganttFilterOwner');
+    var filterStatus = document.getElementById('ganttFilterStatus');
+
+    function buildFilterChips(container, values, kind){
+      values.forEach(function(val){
+        var chip = document.createElement('span');
+        chip.className = 'pm-chip';
+        chip.textContent = (kind === 'status') ? statusLabels[val] : val;
+        chip.style.background = 'var(--pm-surface-sub)';
+        chip.style.borderColor = 'var(--pm-border-strong)';
+        chip.style.color = 'var(--pm-tx-secondary)';
+        chip.dataset.kind = kind;
+        chip.dataset.value = val;
+        chip.addEventListener('click', function(){
+          if (activeFilters[kind] === val) {
+            activeFilters[kind] = null;
+          } else {
+            activeFilters[kind] = val;
+          }
+          renderChips();
+          renderRows();
+        });
+        container.appendChild(chip);
+      });
+    }
+
+    function renderChips(){
+      [filterPhase, filterOwner, filterStatus].forEach(function(container){
+        var chips = container.querySelectorAll('.pm-chip');
+        chips.forEach(function(chip){
+          var kind = chip.dataset.kind;
+          var val = chip.dataset.value;
+          var isOn = activeFilters[kind] === val;
+          chip.classList.toggle('on', isOn);
+          if (isOn) {
+            chip.style.background = 'var(--pm-coral-400)';
+            chip.style.borderColor = 'var(--pm-coral-400)';
+            chip.style.color = '#fff';
+          } else {
+            chip.style.background = 'var(--pm-surface-sub)';
+            chip.style.borderColor = 'var(--pm-border-strong)';
+            chip.style.color = 'var(--pm-tx-secondary)';
+          }
+        });
+      });
+    }
+
+    function buildWeekHeader(){
+      weeksHead.style.gridTemplateColumns = 'repeat(' + TOTAL_WEEKS + ', 1fr)';
+      for (var w = 1; w <= TOTAL_WEEKS; w++) {
+        var cell = document.createElement('div');
+        cell.className = 'gantt-week-num';
+        cell.textContent = 'W' + w;
+        weeksHead.appendChild(cell);
+      }
+      var line = document.createElement('div');
+      line.className = 'gantt-today-line';
+      line.style.left = pct(TODAY_WEEK - 0.5) + '%';
+      var label = document.createElement('div');
+      label.className = 'gantt-today-label';
+      label.style.left = pct(TODAY_WEEK - 0.5) + '%';
+      label.textContent = 'Today';
+      weeksHead.appendChild(line);
+      weeksHead.appendChild(label);
+    }
+
+    function pct(weekPos){
+      return (weekPos / TOTAL_WEEKS) * 100;
+    }
+
+    function taskVisible(t){
+      if (activeFilters.phase && t.phase !== activeFilters.phase) return false;
+      if (activeFilters.owner && t.owner !== activeFilters.owner) return false;
+      if (activeFilters.status && t.status !== activeFilters.status) return false;
+      return true;
+    }
+
+    function depNames(t){
+      if (!t.deps.length) return 'none';
+      return t.deps.map(function(id){ return taskById[id] ? taskById[id].name : id; }).join(', ');
+    }
+
+    function clearRows(){
+      var rows = grid.querySelectorAll('.gantt-row');
+      rows.forEach(function(r){ r.remove(); });
+    }
+
+    function renderRows(){
+      clearRows();
+      var visible = tasks.filter(taskVisible);
+
+      visible.forEach(function(t){
+        var row = document.createElement('div');
+        row.className = 'gantt-row';
+
+        var nameCell = document.createElement('div');
+        nameCell.className = 'gantt-row-name' + (t.critical ? ' is-critical' : '');
+        var star = t.critical ? '<span class="gantt-star">&#9733;</span>' : '';
+        nameCell.innerHTML = star + escapeHtml(t.name) + '<span class="gantt-phase-tag">' + escapeHtml(t.phase) + '</span>';
+
+        var track = document.createElement('div');
+        track.className = 'gantt-track';
+
+        if (t.milestone) {
+          var m = document.createElement('div');
+          m.className = 'gantt-milestone';
+          m.style.left = pct(t.start) + '%';
+          m.dataset.id = t.id;
+          if (t.id === selectedTaskId) m.classList.add('is-selected');
+          attachHandlers(m, t);
+          track.appendChild(m);
+        } else {
+          var bar = document.createElement('div');
+          bar.className = 'gantt-bar ' + statusClass[t.status];
+          var left = pct(t.start - 1);
+          var width = pct(Math.max(t.end - t.start + 1, 0.4));
+          bar.style.left = left + '%';
+          bar.style.width = width + '%';
+          bar.dataset.id = t.id;
+          bar.textContent = t.name;
+          if (t.id === selectedTaskId) bar.classList.add('is-selected');
+          attachHandlers(bar, t);
+          track.appendChild(bar);
+        }
+
+        row.appendChild(nameCell);
+        row.appendChild(track);
+        grid.appendChild(row);
+      });
+
+      // re-apply predecessor highlight if something is selected
+      if (selectedTaskId) highlightDeps(selectedTaskId);
+    }
+
+    function attachHandlers(el, t){
+      el.addEventListener('mouseenter', function(){ showDetail(t.id, false); });
+      el.addEventListener('click', function(){ selectedTaskId = t.id; showDetail(t.id, true); renderRows(); });
+    }
+
+    function highlightDeps(taskId){
+      var t = taskById[taskId];
+      if (!t) return;
+      grid.querySelectorAll('.gantt-bar, .gantt-milestone').forEach(function(el){
+        el.classList.remove('is-predecessor');
+      });
+      t.deps.forEach(function(depId){
+        var el = grid.querySelector('[data-id="' + depId + '"]');
+        if (el) el.classList.add('is-predecessor');
+      });
+    }
+
+    function showDetail(taskId, isClick){
+      var t = taskById[taskId];
+      if (!t) return;
+      highlightDeps(taskId);
+      var html = '<strong>' + escapeHtml(t.name) + '</strong> &mdash; ' + escapeHtml(t.owner) +
+        ' &middot; ' + statusLabels[t.status] +
+        ' &middot; Week ' + t.start + (t.milestone ? '' : ('&ndash;' + t.end)) +
+        (t.critical ? ' &middot; <span style="color:var(--pm-bad-bd);font-weight:600">critical path</span>' : '') +
+        '<br>Depends on: ' + escapeHtml(depNames(t));
+      statusStrip.innerHTML = html;
+    }
+
+    function escapeHtml(str){
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    buildFilterChips(filterPhase, phases, 'phase');
+    buildFilterChips(filterOwner, owners, 'owner');
+    buildFilterChips(filterStatus, statuses, 'status');
+    buildWeekHeader();
+    renderRows();
+  })();
+  </script>
 </body>
 </html>

@@ -6,7 +6,6 @@
   <title>Fishbone diagram — PM Chart Library</title>
   <link rel="stylesheet" href="../assets/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="../assets/nav.js"></script>
   <style>
     /* Chart-specific overrides — no hardcoded colours, use token vars */
@@ -17,6 +16,169 @@
       padding: 20px;
       margin-bottom: 8px;
     }
+
+    .fb-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .fb-pane { display:none; }
+    .fb-pane.on { display:block; }
+
+    .fb-problem-banner {
+      background: var(--pm-surface-sub);
+      border: 0.5px solid var(--pm-border);
+      border-radius: var(--pm-radius-md);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+      margin-bottom: 14px;
+    }
+    .fb-problem-banner strong { color: var(--pm-tx-primary); }
+
+    /* Spine diagram */
+    .fb-spine-wrap {
+      position: relative;
+      padding: 10px 0 6px;
+      margin-bottom: 6px;
+    }
+    .fb-spine-line {
+      position: relative;
+      height: 3px;
+      background: var(--pm-tx-tertiary);
+      margin: 0 110px 0 8px;
+      border-radius: 2px;
+    }
+    .fb-spine-head {
+      position: absolute;
+      right: -108px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--pm-coral-400);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: var(--pm-radius-md);
+      white-space: nowrap;
+    }
+    .fb-spine-line::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 7px solid transparent;
+      border-left-color: var(--pm-tx-tertiary);
+    }
+
+    /* Compact view */
+    .fb-compact-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--pm-radius-md);
+      margin-bottom: 6px;
+      border-left: 4px solid var(--pm-border-strong);
+    }
+    .fb-compact-row .fb-cat-name { min-width: 110px; font-weight: 600; font-size: 12px; }
+    .fb-compact-row .fb-chips { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
+
+    /* Expanded view */
+    .fb-bone-block { margin-bottom: 16px; }
+    .fb-bone-head {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--pm-border-strong);
+    }
+    .fb-bone-head .sw { width: 10px; height: 10px; border-radius: 3px; }
+    .fb-cause-cards { display:flex; gap:8px; flex-wrap:wrap; }
+    .fb-cause-card {
+      border-radius: var(--pm-radius-sm);
+      padding: 8px 10px;
+      font-size: 11.5px;
+      line-height: 1.4;
+      max-width: 200px;
+      cursor: pointer;
+      border: 0.5px solid transparent;
+      transition: transform .1s;
+    }
+    .fb-cause-card:hover { transform: translateY(-2px); }
+
+    /* Drill-down panel */
+    .fb-drilldown {
+      margin-top: 14px;
+      border: 0.5px solid var(--pm-info-bd);
+      background: var(--pm-info-bg);
+      color: var(--pm-info-tx);
+      border-radius: var(--pm-radius-md);
+      padding: 14px 16px;
+    }
+    .fb-drilldown h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+    .fb-why-chain { list-style:none; margin:0; padding:0; counter-reset: why; }
+    .fb-why-chain li {
+      counter-increment: why;
+      padding: 6px 0 6px 26px;
+      position: relative;
+      font-size: 12px;
+      border-bottom: 0.5px solid var(--pm-border);
+    }
+    .fb-why-chain li:last-child { border-bottom: none; }
+    .fb-why-chain li::before {
+      content: counter(why);
+      position: absolute;
+      left: 0; top: 6px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--pm-info-bd);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fb-why-chain .q { font-weight: 600; }
+    .fb-drilldown-close {
+      float: right;
+      background: transparent;
+      border: 0.5px solid var(--pm-info-bd);
+      color: var(--pm-info-tx);
+      border-radius: var(--pm-radius-pill);
+      font-size: 11px;
+      padding: 3px 10px;
+      cursor: pointer;
+    }
+
+    /* Simulator */
+    .fb-sim-bone-preview {
+      display: flex; align-items: center; gap: 4px;
+      min-width: 60px;
+      justify-content: flex-end;
+    }
+
+    /* Build form */
+    .fb-build-form {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 14px;
+    }
+    .fb-build-form select, .fb-build-form input[type="text"] {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: var(--pm-radius-sm);
+      border: 0.5px solid var(--pm-border-strong);
+      background: var(--pm-surface);
+      color: var(--pm-tx-primary);
+    }
+    .fb-build-form input[type="text"] { flex: 1; min-width: 180px; }
+    .fb-build-form button {
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: var(--pm-radius-pill);
+      border: 0.5px solid var(--pm-coral-400);
+      background: var(--pm-coral-400);
+      color: #fff;
+      cursor: pointer;
+    }
+    .fb-build-form button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -26,21 +188,49 @@
     <h1 class="chart-title">Fishbone diagram</h1>
     <p class="chart-subtitle">Structured root cause analysis for retrospectives.</p>
 
-    <!-- ═══════════════════════════════════════════════════════
-         INTERACTIVE WIDGET
-         Claude Code: replace this placeholder with the full
-         verified widget HTML + CSS + JS from the session brief.
-         All colours must use --pm-* CSS variables.
-         Chart.js charts must read --pm-chart-* vars at runtime.
-         ═══════════════════════════════════════════════════════ -->
     <div class="widget-wrap">
-      <div style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--pm-tx-tertiary);font-size:13px;border:1.5px dashed var(--pm-border-strong);border-radius:8px">
-        <div style="text-align:center">
-          <i class="ti ti-chart-bar" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:8px;color:var(--pm-coral-400)"></i>
-          Widget placeholder — Chart 15: Fishbone diagram<br>
-          <span style="font-size:11px;color:var(--pm-tx-tertiary)">Replace with verified widget code in Claude Code</span>
+      <div class="fb-problem-banner">Problem statement: <strong>Project missed its deadline.</strong> Six standard Ishikawa categories are explored below — click any cause for a 5 Whys drill-down.</div>
+
+      <div class="fb-spine-wrap">
+        <div class="fb-spine-line"><span class="fb-spine-head">Problem</span></div>
+      </div>
+
+      <div class="fb-tabs" role="tablist" aria-label="Fishbone views">
+        <button type="button" class="pm-tab-btn on" data-fb-tab="compact">Compact</button>
+        <button type="button" class="pm-tab-btn" data-fb-tab="expanded">Expanded</button>
+        <button type="button" class="pm-tab-btn" data-fb-tab="simulator">Simulator</button>
+        <button type="button" class="pm-tab-btn" data-fb-tab="build">Build</button>
+      </div>
+
+      <!-- Compact -->
+      <div class="fb-pane on" data-fb-pane="compact">
+        <div id="fbCompactList"></div>
+      </div>
+
+      <!-- Expanded -->
+      <div class="fb-pane" data-fb-pane="expanded">
+        <div id="fbExpandedList"></div>
+      </div>
+
+      <!-- Simulator -->
+      <div class="fb-pane" data-fb-pane="simulator">
+        <div id="fbSimList"></div>
+        <div class="pm-insight" style="background:var(--pm-info-bg);border:0.5px solid var(--pm-info-bd);color:var(--pm-info-tx)">
+          Drag a slider to represent how much team focus or emphasis that category is getting in your retro discussion. Thicker bones and bigger chips mean more airtime — use it to spot categories the room is ignoring.
         </div>
       </div>
+
+      <!-- Build -->
+      <div class="fb-pane" data-fb-pane="build">
+        <form class="fb-build-form" id="fbBuildForm">
+          <select id="fbBuildCategory" aria-label="Category"></select>
+          <input type="text" id="fbBuildText" placeholder="New cause, e.g. 'Unclear requirements at kickoff'" maxlength="120" aria-label="Cause text">
+          <button type="submit">Add cause</button>
+        </form>
+        <div id="fbBuildList"></div>
+      </div>
+
+      <div id="fbDrilldownHost"></div>
     </div>
 
     <!-- Documentation -->
@@ -60,5 +250,239 @@
     </div>
 
   </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var CATEGORIES = [
+      { key: 'people',  label: 'People',      bg: '--pm-people-bg',  bd: '--pm-people-bd',  tx: '--pm-people-tx' },
+      { key: 'process', label: 'Process',      bg: '--pm-process-bg', bd: '--pm-process-bd', tx: '--pm-process-tx' },
+      { key: 'tools',   label: 'Tools',        bg: '--pm-tools-bg',   bd: '--pm-tools-bd',   tx: '--pm-tools-tx' },
+      { key: 'env',     label: 'Environment',  bg: '--pm-env-bg',     bd: '--pm-env-bd',     tx: '--pm-env-tx' },
+      { key: 'mat',     label: 'Materials',    bg: '--pm-mat-bg',     bd: '--pm-mat-bd',     tx: '--pm-mat-tx' },
+      { key: 'meas',    label: 'Measurement',  bg: '--pm-meas-bg',    bd: '--pm-meas-bd',    tx: '--pm-meas-tx' }
+    ];
+
+    var causes = {
+      people: [
+        'Key developer out on leave mid-sprint',
+        'New hires not yet onboarded to the codebase',
+        'Sponsor unavailable for timely decisions'
+      ],
+      process: [
+        'No formal change control on scope additions',
+        'Daily stand-ups skipped for two weeks',
+        'Approval chain has five required signoffs'
+      ],
+      tools: [
+        'CI pipeline flaky, builds re-run manually',
+        'No shared task board, status tracked in email'
+      ],
+      env: [
+        'Staging environment unstable since migration',
+        'Remote team across four time zones'
+      ],
+      mat: [
+        'Design specs delivered two weeks late',
+        'Third-party API documentation outdated'
+      ],
+      meas: [
+        'No baseline velocity to forecast against',
+        'Definition of done inconsistently applied'
+      ]
+    };
+
+    var weights = { people: 3, process: 3, tools: 3, env: 3, mat: 3, meas: 3 };
+    var activeDrilldown = null; // { catKey, causeIdx }
+    var causeIdCounter = 0;
+
+    function catByKey(key) {
+      for (var i = 0; i < CATEGORIES.length; i++) {
+        if (CATEGORIES[i].key === key) return CATEGORIES[i];
+      }
+      return null;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function(c){
+        return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+      });
+    }
+
+    // Deterministic-ish 5 Whys generator: generic but plausible chain per cause text.
+    function buildFiveWhys(causeText) {
+      return [
+        { q: 'Why did this happen — "' + causeText + '"?', a: 'The team did not have a documented plan to prevent or catch it before it affected the schedule.' },
+        { q: 'Why was there no plan to prevent or catch it?', a: 'This category was not assigned an owner during planning, so nobody was watching for early warning signs.' },
+        { q: 'Why was no owner assigned?', a: 'The kickoff focused on scope and dates, not on who is responsible for each risk category.' },
+        { q: 'Why did kickoff skip risk ownership?', a: 'There is no standard kickoff checklist that forces a RACI-style assignment per risk category.' },
+        { q: 'Why is there no standard checklist?', a: 'Past projects treated this as a one-off problem instead of feeding the lesson back into the team’s standard process.' }
+      ];
+    }
+
+    var root = document.currentScript.closest('.chart-wrap');
+    var compactListEl = root.querySelector('#fbCompactList');
+    var expandedListEl = root.querySelector('#fbExpandedList');
+    var simListEl = root.querySelector('#fbSimList');
+    var buildCategoryEl = root.querySelector('#fbBuildCategory');
+    var buildTextEl = root.querySelector('#fbBuildText');
+    var buildFormEl = root.querySelector('#fbBuildForm');
+    var buildListEl = root.querySelector('#fbBuildList');
+    var drilldownHostEl = root.querySelector('#fbDrilldownHost');
+    var tabBtns = root.querySelectorAll('[data-fb-tab]');
+    var panes = root.querySelectorAll('[data-fb-pane]');
+
+    function renderCompact() {
+      compactListEl.innerHTML = CATEGORIES.map(function(cat){
+        var list = causes[cat.key];
+        var chips = list.map(function(c, idx){
+          return '<span class="pm-chip" style="background:var(' + cat.bg + ');border-color:var(' + cat.bd + ');color:var(' + cat.tx + ')" '
+            + 'data-cat="' + cat.key + '" data-idx="' + idx + '">' + escapeHtml(truncate(c, 38)) + '</span>';
+        }).join('');
+        return '<div class="fb-compact-row" style="background:var(' + cat.bg + ');border-left-color:var(' + cat.bd + ')">'
+          + '<span class="fb-cat-name" style="color:var(' + cat.tx + ')">' + escapeHtml(cat.label) + ' (' + list.length + ')</span>'
+          + '<span class="fb-chips">' + chips + '</span></div>';
+      }).join('');
+    }
+
+    function truncate(s, n) {
+      return s.length > n ? s.slice(0, n - 1) + '…' : s;
+    }
+
+    function renderExpanded() {
+      expandedListEl.innerHTML = CATEGORIES.map(function(cat){
+        var list = causes[cat.key];
+        var cards = list.map(function(c, idx){
+          return '<div class="fb-cause-card" style="background:var(' + cat.bg + ');border-color:var(' + cat.bd + ');color:var(' + cat.tx + ')" '
+            + 'data-cat="' + cat.key + '" data-idx="' + idx + '" tabindex="0" role="button">' + escapeHtml(c) + '</div>';
+        }).join('');
+        return '<div class="fb-bone-block">'
+          + '<div class="fb-bone-head"><span class="sw" style="background:var(' + cat.bd + ')"></span>' + escapeHtml(cat.label) + '</div>'
+          + '<div class="fb-cause-cards">' + (cards || '<span style="font-size:11.5px;color:var(--pm-tx-tertiary)">No causes logged yet.</span>') + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function renderSimulator() {
+      simListEl.innerHTML = CATEGORIES.map(function(cat){
+        var w = weights[cat.key];
+        var thickness = 2 + w * 1.6;
+        var chipScale = 0.85 + w * 0.045;
+        return '<div class="pm-slider-row">'
+          + '<span style="min-width:110px;font-weight:600;color:var(' + cat.tx + ')">' + escapeHtml(cat.label) + '</span>'
+          + '<input type="range" min="1" max="10" value="' + w + '" data-cat="' + cat.key + '" style="flex:1" aria-label="' + escapeHtml(cat.label) + ' emphasis">'
+          + '<span style="min-width:28px;text-align:right;color:var(--pm-tx-secondary)">' + w + '</span>'
+          + '<span class="fb-sim-bone-preview">'
+          + '<span style="display:inline-block;height:' + thickness.toFixed(1) + 'px;width:46px;background:var(' + cat.bd + ');border-radius:3px"></span>'
+          + '<span class="pm-chip" style="background:var(' + cat.bg + ');border-color:var(' + cat.bd + ');color:var(' + cat.tx + ');transform:scale(' + chipScale.toFixed(2) + ');cursor:default" data-static="1">' + (causes[cat.key].length) + ' causes</span>'
+          + '</span></div>';
+      }).join('');
+    }
+
+    function renderBuildForm() {
+      if (buildCategoryEl.options.length === 0) {
+        buildCategoryEl.innerHTML = CATEGORIES.map(function(cat){
+          return '<option value="' + cat.key + '">' + escapeHtml(cat.label) + '</option>';
+        }).join('');
+      }
+    }
+
+    function renderBuildList() {
+      buildListEl.innerHTML = CATEGORIES.map(function(cat){
+        var list = causes[cat.key];
+        var rows = list.map(function(c, idx){
+          return '<div class="fb-cause-card" style="background:var(' + cat.bg + ');border-color:var(' + cat.bd + ');color:var(' + cat.tx + ');cursor:default;max-width:none;margin-bottom:6px" data-cat="' + cat.key + '" data-idx="' + idx + '">' + escapeHtml(c) + '</div>';
+        }).join('');
+        return '<div class="fb-bone-block"><div class="fb-bone-head"><span class="sw" style="background:var(' + cat.bd + ')"></span>' + escapeHtml(cat.label) + '</div>' + rows + '</div>';
+      }).join('');
+    }
+
+    function renderDrilldown() {
+      if (!activeDrilldown) { drilldownHostEl.innerHTML = ''; return; }
+      var cat = catByKey(activeDrilldown.catKey);
+      var causeText = causes[activeDrilldown.catKey][activeDrilldown.causeIdx];
+      if (!cat || causeText === undefined) { activeDrilldown = null; drilldownHostEl.innerHTML = ''; return; }
+      var whys = buildFiveWhys(causeText);
+      var whyHtml = whys.map(function(w){
+        return '<li><div class="q">' + escapeHtml(w.q) + '</div><div>' + escapeHtml(w.a) + '</div></li>';
+      }).join('');
+      drilldownHostEl.innerHTML = '<div class="fb-drilldown">'
+        + '<button type="button" class="fb-drilldown-close" id="fbDrilldownClose">Close</button>'
+        + '<h4>5 Whys — ' + escapeHtml(cat.label) + ': ' + escapeHtml(causeText) + '</h4>'
+        + '<ol class="fb-why-chain">' + whyHtml + '</ol></div>';
+      drilldownHostEl.querySelector('#fbDrilldownClose').addEventListener('click', function(){
+        activeDrilldown = null;
+        renderDrilldown();
+      });
+      drilldownHostEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openDrilldown(catKey, idx) {
+      activeDrilldown = { catKey: catKey, causeIdx: idx };
+      renderDrilldown();
+    }
+
+    function renderAll() {
+      renderCompact();
+      renderExpanded();
+      renderSimulator();
+      renderBuildForm();
+      renderBuildList();
+      renderDrilldown();
+    }
+
+    compactListEl.addEventListener('click', function(e){
+      var chip = e.target.closest('.pm-chip');
+      if (!chip) return;
+      openDrilldown(chip.getAttribute('data-cat'), +chip.getAttribute('data-idx'));
+    });
+
+    expandedListEl.addEventListener('click', function(e){
+      var card = e.target.closest('.fb-cause-card');
+      if (!card) return;
+      openDrilldown(card.getAttribute('data-cat'), +card.getAttribute('data-idx'));
+    });
+    expandedListEl.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var card = e.target.closest('.fb-cause-card');
+      if (!card) return;
+      e.preventDefault();
+      openDrilldown(card.getAttribute('data-cat'), +card.getAttribute('data-idx'));
+    });
+
+    simListEl.addEventListener('input', function(e){
+      var slider = e.target.closest('input[type="range"]');
+      if (!slider) return;
+      weights[slider.getAttribute('data-cat')] = +slider.value;
+      renderSimulator();
+    });
+
+    buildFormEl.addEventListener('submit', function(e){
+      e.preventDefault();
+      var catKey = buildCategoryEl.value;
+      var text = buildTextEl.value.trim();
+      if (!text || !causes[catKey]) return;
+      causes[catKey].push(text);
+      causeIdCounter++;
+      buildTextEl.value = '';
+      renderCompact();
+      renderExpanded();
+      renderSimulator();
+      renderBuildList();
+      buildTextEl.focus();
+    });
+
+    tabBtns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var target = btn.getAttribute('data-fb-tab');
+        tabBtns.forEach(function(b){ b.classList.toggle('on', b === btn); });
+        panes.forEach(function(p){ p.classList.toggle('on', p.getAttribute('data-fb-pane') === target); });
+      });
+    });
+
+    renderAll();
+  })();
+  </script>
 </body>
 </html>
