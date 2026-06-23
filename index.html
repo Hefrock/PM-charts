@@ -28,8 +28,25 @@
     .hero-stat-val { font-size: 28px; font-weight: 500; color: var(--pm-coral-400); display: block; }
     .hero-stat-lbl { font-size: 12px; color: var(--pm-tx-secondary); }
     .cat-legend { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin: 0 0 4px; }
-    .legend-item { font-size: 12px; color: var(--pm-tx-secondary); display: inline-flex; align-items: center; gap: 5px; }
+    .legend-item {
+      font: inherit;
+      font-size: 12px;
+      color: var(--pm-tx-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      padding: 4px 6px;
+      border-radius: 20px;
+      cursor: pointer;
+      opacity: 1;
+      transition: opacity .15s;
+    }
     .legend-item i { font-size: 14px; line-height: 1; }
+    .legend-item[aria-pressed="false"] { opacity: .4; }
+    .legend-item:focus-visible { outline: 2px solid var(--pm-coral-400); outline-offset: 2px; }
+    .chart-card.is-hidden { display: none; }
     .grid-wrap { max-width: 960px; margin: 0 auto; padding: 0 20px 60px; }
     .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
     .chart-card {
@@ -72,87 +89,87 @@
       <div class="hero-stat"><span class="hero-stat-val">0</span><span class="hero-stat-lbl">dependencies</span></div>
     </div>
     <div class="cat-legend">
-      <span class="legend-item"><i class="ti ti-calendar-event" style="color:var(--pm-people-bd)"></i>Schedule</span>
-      <span class="legend-item"><i class="ti ti-alert-triangle" style="color:var(--pm-bad-bd)"></i>Risk</span>
-      <span class="legend-item"><i class="ti ti-users" style="color:var(--pm-env-bd)"></i>People</span>
-      <span class="legend-item"><i class="ti ti-coin" style="color:var(--pm-mat-bd)"></i>Finance</span>
-      <span class="legend-item"><i class="ti ti-compass" style="color:var(--pm-process-bd)"></i>Reference</span>
+      <button type="button" class="legend-item" data-category="schedule" aria-pressed="true"><i class="ti ti-calendar-event" style="color:var(--pm-people-bd)"></i>Schedule</button>
+      <button type="button" class="legend-item" data-category="risk" aria-pressed="true"><i class="ti ti-alert-triangle" style="color:var(--pm-bad-bd)"></i>Risk</button>
+      <button type="button" class="legend-item" data-category="people" aria-pressed="true"><i class="ti ti-users" style="color:var(--pm-env-bd)"></i>People</button>
+      <button type="button" class="legend-item" data-category="finance" aria-pressed="true"><i class="ti ti-coin" style="color:var(--pm-mat-bd)"></i>Finance</button>
+      <button type="button" class="legend-item" data-category="reference" aria-pressed="true"><i class="ti ti-compass" style="color:var(--pm-process-bd)"></i>Reference</button>
     </div>
   </div>
 
   <div class="grid-wrap">
     <div class="card-grid">
-      <a class="chart-card" href="charts/01-gantt.html" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
+      <a class="chart-card" href="charts/01-gantt.html" data-category="schedule" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
         <div class="card-top"><span class="card-num">01</span><span class="card-title">Gantt chart</span></div>
         <p class="card-desc">Timeline, dependencies and critical path in one view. The backbone of every project schedule.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Schedule</span><span class="card-tag tag-tabs">Filters</span></div>
       </a>
-      <a class="chart-card" href="charts/02-s-curve.html" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
+      <a class="chart-card" href="charts/02-s-curve.html" data-category="schedule" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
         <div class="card-top"><span class="card-num">02</span><span class="card-title">S-Curve</span></div>
         <p class="card-desc">Cumulative cost and schedule health at a glance. Three lines tell the complete project story.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Schedule</span><span class="card-tag tag-sim">Simulation</span></div>
       </a>
-      <a class="chart-card" href="charts/03-priority-roadmap.html" style="--c-bg:var(--pm-process-bg);--c-tx:var(--pm-process-tx);--c-bd:var(--pm-process-bd)">
+      <a class="chart-card" href="charts/03-priority-roadmap.html" data-category="reference" style="--c-bg:var(--pm-process-bg);--c-tx:var(--pm-process-tx);--c-bd:var(--pm-process-bd)">
         <div class="card-top"><span class="card-num">03</span><span class="card-title">Priority roadmap</span></div>
         <p class="card-desc">All 15 charts ranked by frequency and impact — your master guide to which chart to use when.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Reference</span><span class="card-tag tag-tabs">Filters</span></div>
       </a>
-      <a class="chart-card" href="charts/04-risk-matrix.html" style="--c-bg:var(--pm-bad-bg);--c-tx:var(--pm-bad-tx);--c-bd:var(--pm-bad-bd)">
+      <a class="chart-card" href="charts/04-risk-matrix.html" data-category="risk" style="--c-bg:var(--pm-bad-bg);--c-tx:var(--pm-bad-tx);--c-bd:var(--pm-bad-bd)">
         <div class="card-top"><span class="card-num">04</span><span class="card-title">Risk matrix</span></div>
         <p class="card-desc">Probability vs impact with live response strategies. Add and reposition risks with a live register.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Risk</span><span class="card-tag tag-sim">Live register</span></div>
       </a>
-      <a class="chart-card" href="charts/05-critical-path.html" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
+      <a class="chart-card" href="charts/05-critical-path.html" data-category="schedule" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
         <div class="card-top"><span class="card-num">05</span><span class="card-title">Critical path</span></div>
         <p class="card-desc">Find what's truly unmovable in your schedule. Float calculation with live delay simulation.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Schedule</span><span class="card-tag tag-sim">Simulation</span></div>
       </a>
-      <a class="chart-card" href="charts/06-stakeholder-grid.html" style="--c-bg:var(--pm-env-bg);--c-tx:var(--pm-env-tx);--c-bd:var(--pm-env-bd)">
+      <a class="chart-card" href="charts/06-stakeholder-grid.html" data-category="people" style="--c-bg:var(--pm-env-bg);--c-tx:var(--pm-env-tx);--c-bd:var(--pm-env-bd)">
         <div class="card-top"><span class="card-num">06</span><span class="card-title">Stakeholder grid</span></div>
         <p class="card-desc">Power and interest mapped to engagement strategies. Drag stakeholders to reposition across four quadrants.</p>
         <div class="card-tags"><span class="card-tag tag-cat">People</span><span class="card-tag tag-tabs">4 tabs</span></div>
       </a>
-      <a class="chart-card" href="charts/07-burn-down.html" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
+      <a class="chart-card" href="charts/07-burn-down.html" data-category="schedule" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
         <div class="card-top"><span class="card-num">07</span><span class="card-title">Burn-down chart</span></div>
         <p class="card-desc">Sprint progress and bottleneck signals day by day. Four scenario patterns every Agile PM must recognise.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Schedule</span><span class="card-tag tag-sim">Scenarios</span></div>
       </a>
-      <a class="chart-card" href="charts/08-raci-matrix.html" style="--c-bg:var(--pm-env-bg);--c-tx:var(--pm-env-tx);--c-bd:var(--pm-env-bd)">
+      <a class="chart-card" href="charts/08-raci-matrix.html" data-category="people" style="--c-bg:var(--pm-env-bg);--c-tx:var(--pm-env-tx);--c-bd:var(--pm-env-bd)">
         <div class="card-top"><span class="card-num">08</span><span class="card-title">RACI matrix</span></div>
         <p class="card-desc">Accountability without confusion. Live health checker catches missing or duplicate ownership.</p>
         <div class="card-tags"><span class="card-tag tag-cat">People</span><span class="card-tag tag-sim">Health check</span><span class="card-tag tag-tabs">6 tabs</span></div>
       </a>
-      <a class="chart-card" href="charts/09-resource-histogram.html" style="--c-bg:var(--pm-env-bg);--c-tx:var(--pm-env-tx);--c-bd:var(--pm-env-bd)">
+      <a class="chart-card" href="charts/09-resource-histogram.html" data-category="people" style="--c-bg:var(--pm-env-bg);--c-tx:var(--pm-env-tx);--c-bd:var(--pm-env-bd)">
         <div class="card-top"><span class="card-num">09</span><span class="card-title">Resource histogram</span></div>
         <p class="card-desc">Spot over-allocation before it causes burnout. Per-person weekly sliders recalculate alerts live.</p>
         <div class="card-tags"><span class="card-tag tag-cat">People</span><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">4 tabs</span></div>
       </a>
-      <a class="chart-card" href="charts/10-evm-curves.html" style="--c-bg:var(--pm-mat-bg);--c-tx:var(--pm-mat-tx);--c-bd:var(--pm-mat-bd)">
+      <a class="chart-card" href="charts/10-evm-curves.html" data-category="finance" style="--c-bg:var(--pm-mat-bg);--c-tx:var(--pm-mat-tx);--c-bd:var(--pm-mat-bd)">
         <div class="card-top"><span class="card-num">10</span><span class="card-title">EVM curves</span></div>
         <p class="card-desc">Schedule and cost performance in one financial view. All 12 EVM metrics calculated live from drag sliders.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Finance</span><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">4 tabs</span></div>
       </a>
-      <a class="chart-card" href="charts/11-pareto-chart.html" style="--c-bg:var(--pm-mat-bg);--c-tx:var(--pm-mat-tx);--c-bd:var(--pm-mat-bd)">
+      <a class="chart-card" href="charts/11-pareto-chart.html" data-category="finance" style="--c-bg:var(--pm-mat-bg);--c-tx:var(--pm-mat-tx);--c-bd:var(--pm-mat-bd)">
         <div class="card-top"><span class="card-num">11</span><span class="card-title">Pareto chart</span></div>
         <p class="card-desc">The 20% of causes driving 80% of your problems. Adjust cause counts and watch the vital few recalculate.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Finance</span><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">5 tabs</span></div>
       </a>
-      <a class="chart-card" href="charts/12-tornado-diagram.html" style="--c-bg:var(--pm-bad-bg);--c-tx:var(--pm-bad-tx);--c-bd:var(--pm-bad-bd)">
+      <a class="chart-card" href="charts/12-tornado-diagram.html" data-category="risk" style="--c-bg:var(--pm-bad-bg);--c-tx:var(--pm-bad-tx);--c-bd:var(--pm-bad-bd)">
         <div class="card-top"><span class="card-num">12</span><span class="card-title">Tornado diagram</span></div>
         <p class="card-desc">Risk impact ranked for budget conversations. Drag impact sliders to stress-test your contingency live.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Risk</span><span class="card-tag tag-sim">Simulation</span></div>
       </a>
-      <a class="chart-card" href="charts/13-cumulative-flow.html" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
+      <a class="chart-card" href="charts/13-cumulative-flow.html" data-category="schedule" style="--c-bg:var(--pm-people-bg);--c-tx:var(--pm-people-tx);--c-bd:var(--pm-people-bd)">
         <div class="card-top"><span class="card-num">13</span><span class="card-title">Cumulative flow diagram</span></div>
         <p class="card-desc">Where work is piling up in your workflow. Bottleneck and starvation patterns with live throughput simulation.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Schedule</span><span class="card-tag tag-sim">Simulation</span></div>
       </a>
-      <a class="chart-card" href="charts/14-control-chart.html" style="--c-bg:var(--pm-bad-bg);--c-tx:var(--pm-bad-tx);--c-bd:var(--pm-bad-bd)">
+      <a class="chart-card" href="charts/14-control-chart.html" data-category="risk" style="--c-bg:var(--pm-bad-bg);--c-tx:var(--pm-bad-tx);--c-bd:var(--pm-bad-bd)">
         <div class="card-top"><span class="card-num">14</span><span class="card-title">Control chart</span></div>
         <p class="card-desc">Separate real problems from normal variation. Western Electric rules with live mean and sigma simulation.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Risk</span><span class="card-tag tag-sim">Simulation</span></div>
       </a>
-      <a class="chart-card" href="charts/15-fishbone.html" style="--c-bg:var(--pm-process-bg);--c-tx:var(--pm-process-tx);--c-bd:var(--pm-process-bd)">
+      <a class="chart-card" href="charts/15-fishbone.html" data-category="reference" style="--c-bg:var(--pm-process-bg);--c-tx:var(--pm-process-tx);--c-bd:var(--pm-process-bd)">
         <div class="card-top"><span class="card-num">15</span><span class="card-title">Fishbone diagram</span></div>
         <p class="card-desc">Structured root cause analysis for retrospectives. Compact and expanded views with 5 Whys drill-down.</p>
         <div class="card-tags"><span class="card-tag tag-cat">Reference</span><span class="card-tag tag-sim">Simulation</span><span class="card-tag tag-tabs">5 tabs</span></div>
@@ -163,5 +180,36 @@
   <footer>
     PM Chart Library &nbsp;·&nbsp; 15 interactive charts for project managers &nbsp;·&nbsp; Built with Chart.js
   </footer>
+
+  <script>
+    (function () {
+      var legendButtons = document.querySelectorAll('.legend-item');
+      var cards = document.querySelectorAll('.chart-card');
+      var active = new Set();
+      legendButtons.forEach(function (btn) { active.add(btn.dataset.category); });
+
+      function applyFilter() {
+        var showAll = active.size === 0;
+        cards.forEach(function (card) {
+          var match = showAll || active.has(card.dataset.category);
+          card.classList.toggle('is-hidden', !match);
+        });
+      }
+
+      legendButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var category = btn.dataset.category;
+          var pressed = btn.getAttribute('aria-pressed') === 'true';
+          btn.setAttribute('aria-pressed', String(!pressed));
+          if (pressed) {
+            active.delete(category);
+          } else {
+            active.add(category);
+          }
+          applyFilter();
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
