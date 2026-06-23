@@ -36,6 +36,8 @@ Built as a visual reference and learning tool — fully interactive with simulat
 This repository is configured to publish from the `main` branch (root folder) via Settings then Pages.
 The site is live at https://hefrock.github.io/PM-charts/
 
+(Note: the repository name is case-sensitive in the Pages URL path — it must match `PM-charts` exactly, or the page 404s.)
+
 ## Development
 
 All 15 charts have fully built, interactive widgets. To modify one:
